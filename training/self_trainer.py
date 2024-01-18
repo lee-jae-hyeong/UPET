@@ -26,6 +26,7 @@ from transformers.utils import logging
 from transformers.trainer_utils import denumpify_detensorize, TrainOutput
 from training.sampler import sample_by_bald_class_easiness
 from training.trainer_base import BaseTrainer
+from safetensors.torch import load_model, save_model, load_file
 
 
 logger = logging.get_logger('Self-training')
