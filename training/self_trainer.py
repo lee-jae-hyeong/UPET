@@ -35,6 +35,9 @@ logger = logging.get_logger('Self-training')
 WEIGHTS_NAME = "pytorch_model.bin"
 WEIGHTS_INDEX_NAME = "pytorch_model.bin.index.json"
 
+NEW_WEIGHTS_NAME = "model.safetensors"
+
+
 class DatasetK(Dataset):
     def __init__(
             self,
@@ -348,9 +351,9 @@ class SelfTrainer(object):
         teacher_model = self.teacher_base_model
         teacher_model = self.freeze_backbone(teacher_model, use_pe=False)
         teacher_trainer: TeacherTrainer = self.get_teacher_trainer(base_model=teacher_model, num_train_epochs=self.teacher_training_epoch)
-        
-        if resume_from_checkpoint is not None and (os.path.isfile(os.path.join(resume_from_checkpoint, WEIGHTS_NAME)) or os.path.isfile(
-            os.path.join(resume_from_checkpoint, WEIGHTS_INDEX_NAME))
+        # 2024.01.19 CHANGE WEIGHTS_NAME to NEW_WEIGHTS_NAME
+        if resume_from_checkpoint is not None and (os.path.isfile(os.path.join(resume_from_checkpoint, NEW_WEIGHTS_NAME)) or os.path.isfile(
+            os.path.join(resume_from_checkpoint, NEW_WEIGHTS_NAME))
         ):
             logger.info("*"*80)
             logger.info("* Directly loading the trained teacher model from {} *".format(resume_from_checkpoint))
