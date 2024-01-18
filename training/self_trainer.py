@@ -26,6 +26,7 @@ from transformers.utils import logging
 from transformers.trainer_utils import denumpify_detensorize, TrainOutput
 from training.sampler import sample_by_bald_class_easiness
 from training.trainer_base import BaseTrainer
+#2024.01.18 pytorch_model.bin to model.safetensor change
 from safetensors.torch import load_model, save_model, load_file
 
 
@@ -370,7 +371,9 @@ class SelfTrainer(object):
             print("*"*66)
 
             teacher_trainer.train()
-            teacher_model.load_state_dict(torch.load(os.path.join(teacher_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
+            #2024.01.18 코드 수정
+            load_model(teacher_model, os.path.join(teacher_trainer.state.best_model_checkpoint, "model.safetensors"))
+            #teacher_model.load_state_dict(torch.load(os.path.join(teacher_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
             teacher_trainer.model = teacher_model
 
         # 原始的训练结果
@@ -509,7 +512,9 @@ class SelfTrainer(object):
                 output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter))
             )
             student_trainer.train()
-            student_model.load_state_dict(torch.load(os.path.join(student_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
+            #2024.01.18 코드 수정
+            load_model(student_model, os.path.join(student_trainer.state.best_model_checkpoint, "model.safetensors"))
+            #student_model.load_state_dict(torch.load(os.path.join(student_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
 
             # 将Student模型参数赋给Teacher，作为下一轮训练的Teacher初始化
             logger.info("*"*64)
@@ -592,7 +597,9 @@ class SelfTrainer(object):
                 output_dir=os.path.join(self.output_dir, "student_iter_{}".format(iter))
             )
             student_trainer.train()
-            student_model.load_state_dict(torch.load(os.path.join(student_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
+            # 2024.01.18 코드 수정
+            load_model(student_model, os.path.join(student_trainer.state.best_model_checkpoint, "model.safetensors"))
+            #student_model.load_state_dict(torch.load(os.path.join(student_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
 
             metrics = student_trainer.evaluate()
             post_metric = metrics["eval_{}".format(self.test_key)]
