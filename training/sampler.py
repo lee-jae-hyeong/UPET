@@ -11,7 +11,7 @@ import os
 import random
 
 
-logger = logging.getLogger('UST')
+logger = logging.getLogger('UST_RES')
 
 def get_BALD_acquisition(y_T):
 
@@ -47,12 +47,24 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha):
+
+	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
 	logger.info ("Sampling by easy BALD acquisition function per class")
 	BALD_acq = get_BALD_acquisition(y_T)
+	#BALD_acq = (1. - BALD_acq)/np.sum(1. - BALD_acq)
+	# 2024.01.19 reliable examples sampling 코드 구현 미비로 인해 추가
+	scf_index = np.argmax(y_mean, axis = 1)
+	scf = y_mean[np.arange(len(y_mean)), scf_index]
+	sct = (1 - BALD_acq)
+
+	res_score = ((alpha * scf) + ((1-alpha) * sct)) / (np.sum(alpha * scf) + np.sum((1 - alpha) * sct))
+	
 	BALD_acq = (1. - BALD_acq)/np.sum(1. - BALD_acq)
 	logger.info (BALD_acq)
+	logger.info (f'res_score: {res_score}')
+
 	samples_per_class = num_samples // num_classes
 	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
 	for label in range(num_classes):
@@ -65,7 +77,9 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		y_ = y[y==label]
 		y_var_ = y_var[y == label]		
 		# p = y_mean[y == label]
-		p_norm = BALD_acq[y==label]
+		#2024.01.19 주석 처리
+		#p_norm = BALD_acq[y==label]
+		p_norm = res_score[y==label]
 		p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
 		p_norm = p_norm/np.sum(p_norm)
 		if len(X_input_ids) < samples_per_class:

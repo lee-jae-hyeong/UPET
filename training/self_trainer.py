@@ -285,6 +285,7 @@ class SelfTrainer(object):
         self.student_learning_rate = self.semi_training_args.student_learning_rate
         self.student_pre_seq_len = self.semi_training_args.student_pre_seq_len
         self.output_dir = self.training_args.output_dir
+        self.alpha = self.training_args.alpha
 
     def get_teacher_trainer(
         self, 
@@ -487,7 +488,9 @@ class SelfTrainer(object):
                 y=y_pred, 
                 num_samples=int(y_pred.shape[0] * self.pseudo_sample_num_or_ratio) if self.pseudo_sample_num_or_ratio <= 1.0 else int(self.pseudo_sample_num_or_ratio), 
                 num_classes=self.num_classes, 
-                y_T=y_T)
+                y_T=y_T,
+                alpha=self.alpha)
+            
             pseudo_labeled_examples = X_batch
             pseudo_labeled_examples["label"] = y_batch
             
@@ -574,7 +577,9 @@ class SelfTrainer(object):
                 y=y_pred, 
                 num_samples=post_sample_num, 
                 num_classes=self.num_classes, 
-                y_T=y_T)
+                y_T=y_T,
+                alpha=self.alpha)
+            
             pseudo_labeled_examples = X_batch
             pseudo_labeled_examples["label"] = y_batch
             # 生成pseudo-labeled dataset
