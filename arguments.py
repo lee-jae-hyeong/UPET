@@ -94,12 +94,6 @@ class DataTrainingArguments:
         metadata={
             "help": "The specific prompt string to use"
         })
-    alpha : Optional[float] = field(
-        default=0.4,
-        metadata={
-            "help": "Reliable Example Sampling model confiden and certainty ratio"
-        }
-    )
     
     
 
@@ -293,7 +287,12 @@ class SemiSupervisedArguments:
             "help": "The length of prompt"
         }
     )
-
+    alpha : Optional[float] = field(
+        default=0.4,
+        metadata={
+            "help": "Reliable Example Sampling model confiden and certainty ratio"
+        }
+    )
 
 
 

@@ -285,7 +285,7 @@ class SelfTrainer(object):
         self.student_learning_rate = self.semi_training_args.student_learning_rate
         self.student_pre_seq_len = self.semi_training_args.student_pre_seq_len
         self.output_dir = self.training_args.output_dir
-        self.alpha = self.training_args.alpha
+        self.alpha = self.semi_training_args.alpha
 
     def get_teacher_trainer(
         self, 
