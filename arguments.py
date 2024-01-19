@@ -18,6 +18,7 @@ class DataTrainingArguments:
     into argparse arguments to be able to specify them on
     the command line.training_args
     """
+    # 
     task_name: str = field(
         metadata={
             "help": "The name of the task to train on: " + ", ".join(TASKS),
@@ -93,6 +94,12 @@ class DataTrainingArguments:
         metadata={
             "help": "The specific prompt string to use"
         }
+    alpha : Optional[float] = field(
+        default=0.4,
+        metadata={
+            "help": "Reliable Example Sampling model confiden and certainty ratio"
+        }
+    )
     )
     
 
