@@ -93,14 +93,14 @@ class DataTrainingArguments:
         default=0,
         metadata={
             "help": "The specific prompt string to use"
-        }
+        })
     alpha : Optional[float] = field(
         default=0.4,
         metadata={
             "help": "Reliable Example Sampling model confiden and certainty ratio"
         }
     )
-    )
+    
     
 
 @dataclass
