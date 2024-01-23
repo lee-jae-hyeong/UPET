@@ -2,7 +2,7 @@ import torch
 from torch.utils import data
 from torch.utils.data import Dataset
 from datasets.arrow_dataset import Dataset as HFDataset
-from datasets.load import load_dataset, load_metric
+from datasets.load import load_dataset, load_metric, load_from_disk
 from transformers import (
     AutoTokenizer,
     DataCollatorWithPadding,
@@ -12,7 +12,8 @@ from transformers import (
 import numpy as np
 import logging
 from typing import Optional
-
+import json
+import os
 
 # add by wjn
 def random_sampling(raw_datasets: load_dataset, data_type: str="train", num_examples_per_label: Optional[int]=16):
@@ -47,6 +48,7 @@ task_to_test_key = {
     "sst2": "accuracy",
     "stsb": "accuracy",
     "wnli": "accuracy",
+    "ecommerce" : "accuracy"
 }
 
 task_to_keys = {
@@ -59,6 +61,7 @@ task_to_keys = {
     "sst2": ("sentence", None),
     "stsb": ("sentence1", "sentence2"),
     "wnli": ("sentence1", "sentence2"),
+    "ecommerce" : ("sentence", None)
 }
 
 task_to_template = {
@@ -69,6 +72,7 @@ task_to_template = {
     "qqp": [None, {"prefix_template": " <mask> ,", "suffix_template": ""}],
     "rte": [None, {"prefix_template": " ? <mask> , ", "suffix_template": ""}], # prefix / suffix template in each segment.
     "sst2": [{"prefix_template": "", "suffix_template": "It was <mask> ."}, None], # prefix / suffix template in each segment.
+    "ecommerce" : [{"prefix_templete" : "", "suffix_template" : "브랜드는 <mask> ."}, None]
     
 }
 
@@ -82,6 +86,14 @@ label_words_mapping = {
     "rte": {"not_entailment": ["No"], "entailment": ["Yes"]},
     "sst2": {"negative": ["terrible"], "positive": ["great"]}, # e.g., {"0": ["great"], "1": [bad]}
 }
+ecommerce_path = "/content/drive/MyDrive/UPET/ecommerce.json"
+if os.path.exists(ecommerce_path):
+    with open('/content/drive/MyDrive/UPET/ecommerce.json', 'r') as file:
+        e = {}
+        ecommerce_label_words_mapping = json.load(file)
+        e['ecommerce'] = ecommerce_label_words_mapping
+        label_words_mapping.update(e)
+    
 
 
 logger = logging.getLogger(__name__)
@@ -97,7 +109,13 @@ class GlueDataset():
         use_prompt=None
     ) -> None:
         super().__init__()
-        raw_datasets = load_dataset("glue", data_args.dataset_name)
+
+        if data_args.dataset_name == "ecommerce":
+            path = "/content/drive/MyDrive/UPET/ecommerce"
+            raw_datasets = load_from_disk(path)
+        else:
+            raw_datasets = load_dataset("glue", data_args.dataset_name)
+
         self.tokenizer = tokenizer
         self.data_args = data_args
         #labels
