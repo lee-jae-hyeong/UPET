@@ -76,7 +76,7 @@ task_to_template = {
     "qqp": [None, {"prefix_template": " <mask> ,", "suffix_template": ""}],
     "rte": [None, {"prefix_template": " ? <mask> , ", "suffix_template": ""}], # prefix / suffix template in each segment.
     "sst2": [{"prefix_template": "", "suffix_template": "It was <mask> ."}, None], # prefix / suffix template in each segment.
-    "ecommerce" : [{"prefix_templete" : "", "suffix_template" : "브랜드는 <mask> ."}, None]
+    "ecommerce" : [{"prefix_template" : "", "suffix_template" : "브랜드는 <mask> ."}, None]
     
 }
 
