@@ -1621,7 +1621,7 @@ class RobertaForPromptFinetuning(RobertaPreTrainedModel):
             # Regression output
             output = (torch.exp(logits[..., 1].unsqueeze(-1)) * (self.ub - self.lb) + self.lb,)
 
-       if not return_dict:
+        if not return_dict:
             return ((loss,) + output) if loss is not None else output
 
         return SequenceClassifierOutput(
