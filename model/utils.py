@@ -290,15 +290,15 @@ def get_model(data_args, model_args, task_type: TaskType, config: AutoConfig, fi
             config=config,
             revision=model_args.model_revision,
         )
-    
-    if data_args.dataset_name == 'ecommerce':
-        path = "/content/drive/MyDrive/UPET/ecommerce"
-        raw_datasets = load_from_disk(path)
-        new_token = raw_datasets["train"].features["label"].names
-        tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
-        new_tokens = set(new_token) - set(tokenizer.vocab.keys())
-        tokenizer.add_tokens(list(new_tokens))
-        model.resize_token_embeddings(len(tokenizer))
+    print(len(model.tokenizer))
+    # if data_args.dataset_name == 'ecommerce':
+    #     path = "/content/drive/MyDrive/UPET/ecommerce"
+    #     raw_datasets = load_from_disk(path)
+    #     new_token = raw_datasets["train"].features["label"].names
+    #     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
+    #     new_tokens = set(new_token) - set(tokenizer.vocab.keys())
+    #     tokenizer.add_tokens(list(new_tokens))
+    #     model.resize_token_embeddings(len(tokenizer))
 
     # bert_param = 0
     if model_args.head_only and model_args.use_pe:

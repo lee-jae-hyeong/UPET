@@ -1332,8 +1332,10 @@ class RobertaForPromptFinetuning(RobertaPreTrainedModel):
         super().__init__(config)
         self.num_labels = config.num_labels
         self.roberta = RobertaModel(config)
+        self.roberta.resize_token_embeddings(32793)
         # self.classifier = RobertaClassificationHead(config)
         self.lm_head = RobertaLMHead(config)
+        self.lm_head.resize_token_embeddings(32793)
         self.hidden_size = config.hidden_size
 
         # self.map = nn.Linear(config.hidden_size, config.hidden_size)
