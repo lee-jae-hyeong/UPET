@@ -157,6 +157,13 @@ class GlueDataset():
                 # For RoBERTa/BART/T5, tokenization also considers space, so we use space+word as label words.
                 if self.label_to_word[key][0] not in ['<', '[', '.', ',']:
                     # Make sure space+word is in the vocabulary
+
+                    if data_args.dataset == 'ecommerce':
+                        new_token = self.label_list
+                        new_tokens = set(new_token) - set(tokenizer.vocab.keys())
+                        tokenizer.add_tokens(list(new_tokens))
+
+                        #model.tokenizer.resize_token_embeddings(len(tokenizer))
                     assert len(tokenizer.tokenize(' ' + self.label_to_word[key])) == 1
                     self.label_to_word[key] = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(' ' + self.label_to_word[key])[0])
                 else:
