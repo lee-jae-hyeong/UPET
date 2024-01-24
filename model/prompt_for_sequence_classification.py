@@ -559,9 +559,13 @@ class LMForPromptFinetuning(BertPreTrainedModel):
                     loss = F.kl_div(F.log_softmax(logits, dim=-1, dtype=torch.float32),
                                     labels, reduction='batchmean')
                 else:
+
                     loss_fct = nn.CrossEntropyLoss()
 
                     loss = loss_fct(logits.view(-1, logits.size(-1)), labels.view(-1))
+                    pt = torch.exp(-loss)
+                    focal_loss = alpha[labels.view(-1)]*(1-pt)**gamma * loss
+                    
 
         output = (logits,)
         if self.num_labels == 1:
@@ -1608,6 +1612,7 @@ class RobertaForPromptFinetuning(RobertaPreTrainedModel):
                                     labels, reduction='batchmean')
                 else:
                     loss_fct = nn.CrossEntropyLoss()
+                    
 
                     loss = loss_fct(logits.view(-1, logits.size(-1)), labels.view(-1))
 
@@ -1616,7 +1621,7 @@ class RobertaForPromptFinetuning(RobertaPreTrainedModel):
             # Regression output
             output = (torch.exp(logits[..., 1].unsqueeze(-1)) * (self.ub - self.lb) + self.lb,)
 
-        if not return_dict:
+       if not return_dict:
             return ((loss,) + output) if loss is not None else output
 
         return SequenceClassifierOutput(
@@ -3360,6 +3365,7 @@ num_labels_mapping = {
     "cb": 3, 
     "ag_news": 4,
     "yelp_polarity": 2,
+    "ecommer" : 868
 }
 
 output_modes_mapping = {
@@ -3390,7 +3396,8 @@ output_modes_mapping = {
     "boolq": "classification",
     "cb": "classification",
     "ag_news": "classification",
-    "yelp_polarity": "classification"
+    "yelp_polarity": "classification",
+    "ecommerce" : "classification"
 }
 
 # For regression task only: median

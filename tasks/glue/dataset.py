@@ -30,7 +30,11 @@ def random_sampling(raw_datasets: load_dataset, data_type: str="train", num_exam
     for label, eid_list in label_dict.items():
         # examples = deepcopy(eid_list)
         # shuffle(examples)
-        idxs = np.random.choice(len(eid_list), size=num_examples_per_label, replace=False)
+        # 수정
+        if len(eid_list) < num_examples_per_label:
+            idxs = np.random.choice(len(eid_list), size=len(eid_list), replace=False)
+        else:
+            idxs = np.random.choice(len(eid_list), size=num_examples_per_label, replace=False)
         selected_eids = [eid_list[i] for i in idxs]
         few_example_ids.extend(selected_eids)
     # 保存没有被选中的example id
@@ -158,7 +162,7 @@ class GlueDataset():
                 if self.label_to_word[key][0] not in ['<', '[', '.', ',']:
                     # Make sure space+word is in the vocabulary
 
-                    if data_args.dataset == 'ecommerce':
+                    if data_args.dataset_name == 'ecommerce':
                         new_token = self.label_list
                         new_tokens = set(new_token) - set(tokenizer.vocab.keys())
                         tokenizer.add_tokens(list(new_tokens))
@@ -244,8 +248,11 @@ class GlueDataset():
             if semi_training_args.use_semi is True:
                 self.unlabeled_dataset = self.all_train_dataset.select(un_selected_idx_list)
                 print("The number of unlabeled data is {}".format(len(self.unlabeled_dataset)))
-
-        self.metric = load_metric("./metrics/glue", data_args.dataset_name)
+        if data_args.dataset_name == "ecommerce":
+            self.metric = load_metric("accuracy")
+        else:
+            self.metric = load_metric("./metrics/glue", data_args.dataset_name)
+        #self.metric = load_metric("./metrics/glue", data_args.dataset_name)
 
         if data_args.pad_to_max_length:
             self.data_collator = default_data_collator
