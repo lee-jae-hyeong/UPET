@@ -3365,7 +3365,7 @@ num_labels_mapping = {
     "cb": 3, 
     "ag_news": 4,
     "yelp_polarity": 2,
-    "ecommer" : 868
+    "ecommerce" : 868
 }
 
 output_modes_mapping = {
