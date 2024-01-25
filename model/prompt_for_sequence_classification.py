@@ -48,7 +48,50 @@ def norm_grad(grad, eff_grad=None, sentence_level=False, norm_p='max', epsilon=1
             eff_direction = eff_grad / (grad.abs().max(-1, keepdim=True)[0] + epsilon)
     return direction, eff_direction
 
+def resize_embedding_and_fc(model, new_num_tokens, model_name):
+      # Change the FC 
+      
+      if model_name == 'roberta':
+        old_fc=model.lm_head.decoder
+        model.lm_head.decoder=_get_resized_fc(model, old_fc, new_num_tokens)
 
+        old_bias=model.lm_head.bias
+        model.lm_head.bias=_get_resized_bias(old_bias, new_num_tokens)
+        model.resize_token_embeddings(new_num_tokens)
+    
+    
+def _get_resized_bias(old_bias, new_num_tokens):
+    old_num_tokens = old_bias.data.size()[0]
+    if old_num_tokens == new_num_tokens:
+        return old_bias
+
+    # Create new biases
+    new_bias = nn.Parameter(torch.zeros(new_num_tokens))
+    new_bias.to(old_bias.device)
+
+    # Copy from the previous weights
+    num_tokens_to_copy = min(old_num_tokens, new_num_tokens)
+    new_bias.data[:num_tokens_to_copy] = old_bias.data[:num_tokens_to_copy]
+    return new_bias
+    
+def _get_resized_fc(model, old_fc, new_num_tokens):
+
+    old_num_tokens, old_embedding_dim = old_fc.weight.size()
+    if old_num_tokens == new_num_tokens:
+        return old_fc
+
+    # Create new weights
+    new_fc = nn.Linear(in_features=old_embedding_dim, out_features=new_num_tokens)
+    new_fc.to(old_fc.weight.device)
+
+    # initialize all weights (in particular added tokens)
+    model._init_weights(new_fc)
+
+    # Copy from the previous weights
+    num_tokens_to_copy = min(old_num_tokens, new_num_tokens)
+    new_fc.weight.data[:num_tokens_to_copy, :] = old_fc.weight.data[:num_tokens_to_copy, :]
+
+    return new_fc
 
 def resize_token_type_embeddings(model, new_num_types: int, random_segment: bool):
     """
