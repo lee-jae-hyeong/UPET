@@ -290,7 +290,7 @@ def get_model(data_args, model_args, task_type: TaskType, config: AutoConfig, fi
             config=config,
             revision=model_args.model_revision,
         )
-    print(len(model.tokenizer))
+
     # if data_args.dataset_name == 'ecommerce':
     #     path = "/content/drive/MyDrive/UPET/ecommerce"
     #     raw_datasets = load_from_disk(path)
