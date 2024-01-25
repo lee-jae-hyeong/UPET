@@ -154,6 +154,7 @@ class LMForPromptFinetuning(BertPreTrainedModel):
         )
 
         else:
+            config.output_hidden_states=True 
             self.lm_model = model_fn.from_pretrained(
                 model_args.model_name_or_path,
                 from_tf=bool(".ckpt" in model_args.model_name_or_path),
@@ -1332,10 +1333,8 @@ class RobertaForPromptFinetuning(RobertaPreTrainedModel):
         super().__init__(config)
         self.num_labels = config.num_labels
         self.roberta = RobertaModel(config)
-        self.roberta.resize_token_embeddings(32793)
         # self.classifier = RobertaClassificationHead(config)
         self.lm_head = RobertaLMHead(config)
-        self.lm_head.resize_token_embeddings(32793)
         self.hidden_size = config.hidden_size
 
         # self.map = nn.Linear(config.hidden_size, config.hidden_size)
