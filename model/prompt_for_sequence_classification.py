@@ -204,7 +204,10 @@ class LMForPromptFinetuning(BertPreTrainedModel):
                 config=config,
                 cache_dir=model_args.cache_dir,
             )
-        
+
+            if data_args.dataset_name == 'ecoomerce':
+                self.lm_model.resize_embedding_and_fc(32793)
+                
         if config.model_type == "roberta":
             self.embeddings = self.lm_model.roberta.embeddings
         elif config.model_type == "bert":
@@ -607,8 +610,8 @@ class LMForPromptFinetuning(BertPreTrainedModel):
                     loss_fct = nn.CrossEntropyLoss()
 
                     loss = loss_fct(logits.view(-1, logits.size(-1)), labels.view(-1))
-                    pt = torch.exp(-loss)
-                    focal_loss = alpha[labels.view(-1)]*(1-pt)**gamma * loss
+                    # pt = torch.exp(-loss)
+                    # focal_loss = alpha[labels.view(-1)]*(1-pt)**gamma * loss
                     
 
         output = (logits,)
@@ -1414,6 +1417,51 @@ class RobertaForPromptFinetuning(RobertaPreTrainedModel):
         # else:
         #     raise ValueError('unknown prompt_encoder_type.')
 
+    def resize_embedding_and_fc(self, new_num_tokens):
+      # Change the FC 
+      old_fc = self.lm_head.decoder
+      self.lm_head.decoder = self._get_resized_fc(old_fc, new_num_tokens)
+      
+      # Change the bias
+      old_bias = self.lm_head.decoder.bias
+      self.lm_head.decoder.bias = self._get_resized_bias(old_bias, new_num_tokens)
+      
+      # Change the embedding
+      self.resize_token_embeddings(new_num_tokens)
+    
+    
+    def _get_resized_bias(self, old_bias, new_num_tokens):
+        old_num_tokens = old_bias.data.size()[0]
+        if old_num_tokens == new_num_tokens:
+            return old_bias
+
+        # Create new biases
+        new_bias = nn.Parameter(torch.zeros(new_num_tokens))
+        new_bias.to(old_bias.device)
+
+        # Copy from the previous weights
+        num_tokens_to_copy = min(old_num_tokens, new_num_tokens)
+        new_bias.data[:num_tokens_to_copy] = old_bias.data[:num_tokens_to_copy]
+        return new_bias
+    
+    def _get_resized_fc(self, old_fc, new_num_tokens):
+
+        old_num_tokens, old_embedding_dim = old_fc.weight.size()
+        if old_num_tokens == new_num_tokens:
+            return old_fc
+
+        # Create new weights
+        new_fc = nn.Linear(in_features=old_embedding_dim, out_features=new_num_tokens)
+        new_fc.to(old_fc.weight.device)
+
+        # initialize all weights (in particular added tokens)
+        self._init_weights(new_fc)
+
+        # Copy from the previous weights
+        num_tokens_to_copy = min(old_num_tokens, new_num_tokens)
+        new_fc.weight.data[:num_tokens_to_copy, :] = old_fc.weight.data[:num_tokens_to_copy, :]
+        return new_fc
+    
     def freeze_backbone(self, use_pe: bool=True):
         if use_pe:
             self.roberta = freezer.freeze_lm(self.roberta)
