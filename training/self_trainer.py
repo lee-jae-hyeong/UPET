@@ -352,6 +352,10 @@ class SelfTrainer(object):
         teacher_model = self.teacher_base_model
         teacher_model = self.freeze_backbone(teacher_model, use_pe=False)
         teacher_trainer: TeacherTrainer = self.get_teacher_trainer(base_model=teacher_model, num_train_epochs=self.teacher_training_epoch)
+        logger.info("*"*80)
+        logger.info("* teacher model train dataset shape : {} *".format(teacher_trainer.train_dataset.shape))
+        #print(teacher_trainer.train_dataset.shape)
+        
         # 2024.01.19 CHANGE WEIGHTS_NAME to NEW_WEIGHTS_NAME
         if resume_from_checkpoint is not None and (os.path.isfile(os.path.join(resume_from_checkpoint, NEW_WEIGHTS_NAME)) or os.path.isfile(
             os.path.join(resume_from_checkpoint, NEW_WEIGHTS_NAME))
