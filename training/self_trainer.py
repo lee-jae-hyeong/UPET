@@ -97,7 +97,8 @@ class TeacherTrainer(BaseTrainer):
             compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None,
             callbacks: Optional[List[TrainerCallback]] = None,
             optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (None, None),
-            test_key: str = "accuracy"
+            test_key: str = "accuracy",
+            dataset_name=None
     ):
         super(TeacherTrainer, self).__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer, model_init, compute_metrics, callbacks, optimizers)
         self.predict_dataset = eval_dataset
@@ -111,6 +112,7 @@ class TeacherTrainer(BaseTrainer):
             f"best_eval_{self.test_key}": 0,
         })
         self.global_step_ = 0
+        self.dataset_name=dataset_name
     
 
     def mc_evaluate(
@@ -136,6 +138,10 @@ class TeacherTrainer(BaseTrainer):
         if unlabeled_data_num == -1 or unlabeled_data_num >= len(unlabeled_dataset):
             unlabeled_data_num = len(unlabeled_dataset)
             is_sample = False
+
+        else:
+            if self.dataset_name == 'ecommerce':
+                is_sample=False
         
         if is_sample:
             recalled_examples_idx_list = random_sampling(
@@ -254,6 +260,7 @@ class SelfTrainer(object):
         test_key=None,
         task_type="cls",
         num_classes=0,
+        dataset_name=None
     ) -> None:
 
         logger.info("This is a Self-trainer.")
@@ -286,6 +293,7 @@ class SelfTrainer(object):
         self.student_pre_seq_len = self.semi_training_args.student_pre_seq_len
         self.output_dir = self.training_args.output_dir
         self.alpha = self.semi_training_args.alpha
+        self.dataset_name = dataset_name
 
     def get_teacher_trainer(
         self, 
@@ -307,6 +315,7 @@ class SelfTrainer(object):
             tokenizer=self.tokenizer,
             data_collator=self.teacher_data_collator,
             test_key=self.test_key,
+            dataset_name=self.dataset_name
         )
         return teacher_trainer
 

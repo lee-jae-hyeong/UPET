@@ -57,12 +57,22 @@ def get_trainer(args):
         )
 
     model = get_model(data_args, model_args, TaskType.SEQUENCE_CLASSIFICATION, config)
-
+    if data_args.dataset_name == 'ecommerce':
+        path = "/content/drive/MyDrive/UPET/ecommerce"
+        raw_datasets = load_from_disk(path)
+        new_token = raw_datasets["train"].features["label"].names
+        tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
+        new_tokens = set(new_token) - set(tokenizer.vocab.keys())
+        tokenizer.add_tokens(list(new_tokens))
+        model.resize_token_embeddings(len(tokenizer))
     # Initialize our Trainer
 
     if semi_training_args.use_semi:
         model_args.pre_seq_len = semi_training_args.student_pre_seq_len
         student_model = get_model(data_args, model_args, TaskType.SEQUENCE_CLASSIFICATION, config)
+
+        if data_args.dataset_name == 'ecommerce':
+            student_model.resize_token_embeddings(len(tokenizer))
         trainer = SelfTrainer(
             teacher_base_model=model,
             student_base_model=student_model,
@@ -78,6 +88,7 @@ def get_trainer(args):
             test_key=dataset.test_key,
             task_type="cls",
             num_classes=len(dataset.label2id),
+            dataset_name=data_args.dataset_name
         )
 
         return trainer, None
