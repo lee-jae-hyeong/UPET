@@ -2,6 +2,7 @@
 Head Tuning with Prefix / Adapter
 '''
 import torch
+import numpy as np
 from torch._C import NoopLogger
 import torch.nn
 import torch.nn.functional as F
@@ -474,7 +475,12 @@ class RobertForSequenceClassification(RobertaPreTrainedModel):
         self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         self.classifier = torch.nn.Linear(config.hidden_size, config.num_labels)
         self.init_weights()
-    
+
+        if len(self.num_labels) == 2:
+            self.loss_type = 'sigmoid'
+        elif len(self.num_labels) > 2:
+            self.loss_type = 'softmax'
+
     def freeze_backbone(self, use_pe: bool=True):
         if use_pe:
             self.roberta = freezer.freeze_lm(self.roberta)
@@ -535,9 +541,17 @@ class RobertForSequenceClassification(RobertaPreTrainedModel):
                     loss = loss_fct(logits.squeeze(), labels.squeeze())
                 else:
                     loss = loss_fct(logits, labels)
+
             elif self.config.problem_type == "single_label_classification":
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+
+                if self.config.cb_loss:
+                    no_of_classes=self.num_labels
+                    sample_per_cls=count_classes(labels.view(-1))
+                    loss = CB_loss(logits.view(-1, self.num_labels), labels.view(-1), sample_per_cls, no_of_classes, loss_type=self.loss_type, beta=0.9) 
+                else:
+                    loss_fct = CrossEntropyLoss()
+                    loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
@@ -562,6 +576,11 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
         self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         self.classifier = torch.nn.Linear(config.hidden_size, config.num_labels)
         self.init_weights()
+
+        if len(self.num_labels) == 2:
+            self.loss_type = 'sigmoid'
+        elif len(self.num_labels) > 2:
+            self.loss_type = 'softmax'
 
         for param in self.roberta.parameters():
             param.requires_grad = False
@@ -671,9 +690,19 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
                     loss = loss_fct(logits.squeeze(), labels.squeeze())
                 else:
                     loss = loss_fct(logits, labels)
+
             elif self.config.problem_type == "single_label_classification":
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+
+                if self.config.cb_loss:
+                    no_of_classes=self.num_labels
+                    sample_per_cls=count_classes(labels.view(-1))
+                    loss = CB_loss(logits.view(-1, self.num_labels), labels.view(-1), sample_per_cls, no_of_classes, loss_type=self.loss_type, beta=0.9) 
+                else:
+                    loss_fct = CrossEntropyLoss()
+                    loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            
+                # loss_fct = CrossEntropyLoss()
+                # loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
@@ -705,6 +734,11 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
 
         if self.config.use_pe:
             self.roberta = freezer.freeze_lm(self.roberta)
+
+        if len(self.num_labels) == 2:
+            self.loss_type = 'sigmoid'
+        elif len(self.num_labels) > 2:
+            self.loss_type = 'softmax'
         
         self.pre_seq_len = config.pre_seq_len
         self.n_layer = config.num_hidden_layers
@@ -793,8 +827,15 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
                 else:
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+
+                if self.config.cb_loss:
+                    no_of_classes=self.num_labels
+                    sample_per_cls=count_classes(labels.view(-1))
+                    loss = CB_loss(logits.view(-1, self.num_labels), labels.view(-1), sample_per_cls, no_of_classes, loss_type=self.loss_type, beta=0.9) 
+                else:
+                    loss_fct = CrossEntropyLoss()
+                    loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                    
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
@@ -883,6 +924,7 @@ class RobertaAdapterForSequenceClassification(RobertaPreTrainedModel):
                     self.config.problem_type = "regression"
                 elif self.num_labels > 1 and (labels.dtype == torch.long or labels.dtype == torch.int):
                     self.config.problem_type = "single_label_classification"
+                    
                 else:
                     self.config.problem_type = "multi_label_classification"
 
@@ -895,6 +937,7 @@ class RobertaAdapterForSequenceClassification(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
@@ -1021,6 +1064,8 @@ class DebertaPrefixForSequenceClassification(DebertaPreTrainedModel):
                     labels = torch.gather(labels, 0, label_index.view(-1))
                     loss_fct = CrossEntropyLoss()
                     loss = loss_fct(labeled_logits.view(-1, self.num_labels).float(), labels.view(-1))
+
+                    # loss = CB_loss(labels, labeled_logits, sample_per_cls, no_of_classes, loss_type='soft_max', beta=0.99)
                 else:
                     loss = torch.tensor(0).to(logits)
             else:
@@ -1035,4 +1080,84 @@ class DebertaPrefixForSequenceClassification(DebertaPreTrainedModel):
                 logits=logits,
                 hidden_states=outputs.hidden_states,
                 attentions=outputs.attentions,
-            )
+           )
+
+def CB_loss(labels, logits, samples_per_cls, no_of_classes, loss_type='softmax', beta=0.99, gamma = 0.01):
+    """Compute the Class Balanced Loss between `logits` and the ground truth `labels`.
+    Class Balanced Loss: ((1-beta)/(1-beta^n))*Loss(labels, logits)
+    where Loss is one of the standard losses used for Neural Networks.
+    Args:
+      labels: A int tensor of size [batch].
+      logits: A float tensor of size [batch, no_of_classes].
+      samples_per_cls: A python list of size [no_of_classes].
+      no_of_classes: total number of classes. int
+      loss_type: string. One of "sigmoid", "focal", "softmax".
+      beta: float. Hyperparameter for Class balanced loss.
+      gamma: float. Hyperparameter for Focal loss.
+    Returns:
+      cb_loss: A float tensor representing class balanced loss
+    """
+    effective_num = 1.0 - np.power(beta, samples_per_cls)
+    weights = (1.0 - beta) / np.array(effective_num)
+    weights = weights / np.sum(weights) * no_of_classes
+
+    labels_one_hot = F.one_hot(labels, no_of_classes).float()
+
+    weights = torch.tensor(weights).float()
+    weights = weights.unsqueeze(0)
+    weights = weights.repeat(labels_one_hot.shape[0],1) * labels_one_hot
+    weights = weights.sum(1)
+    weights = weights.unsqueeze(1)
+    weights = weights.repeat(1,no_of_classes)
+
+    if loss_type == "focal":
+        cb_loss = focal_loss(labels_one_hot, logits, weights, gamma)
+    elif loss_type == "sigmoid":
+        cb_loss = F.binary_cross_entropy_with_logits(input = logits,target = labels_one_hot, weights = weights)
+    elif loss_type == "softmax":
+        pred = logits.softmax(dim = 1)
+        cb_loss = F.binary_cross_entropy(input = pred, target = labels_one_hot, weight = weights)
+    return cb_loss
+
+
+def focal_loss(labels, logits, alpha, gamma):
+    """Compute the focal loss between `logits` and the ground truth `labels`.
+    Focal loss = -alpha_t * (1-pt)^gamma * log(pt)
+    where pt is the probability of being classified to the true class.
+    pt = p (if true class), otherwise pt = 1 - p. p = sigmoid(logit).
+    Args:
+      labels: A float tensor of size [batch, num_classes].
+      logits: A float tensor of size [batch, num_classes].
+      alpha: A float tensor of size [batch_size]
+        specifying per-example weight for balanced cross entropy.
+      gamma: A float scalar modulating loss from hard and easy examples.
+    Returns:
+      focal_loss: A float32 scalar representing normalized total loss.
+    """    
+    BCLoss = F.binary_cross_entropy_with_logits(input = logits, target = labels,reduction = "none")
+
+    if gamma == 0.0:
+        modulator = 1.0
+    else:
+        modulator = torch.exp(-gamma * labels * logits - gamma * torch.log(1 + 
+            torch.exp(-1.0 * logits)))
+
+    loss = modulator * BCLoss
+
+    weighted_loss = alpha * loss
+    focal_loss = torch.sum(weighted_loss)
+
+    focal_loss /= torch.sum(labels)
+
+    return focal_loss
+
+def count_classes(labels):
+    # 클래스의 개수를 추출
+    num_classes = int(torch.max(labels) + 1)
+    counts = torch.zeros(num_classes, dtype=torch.int)
+
+    # 레이블을 이용하여 각 클래스별로 개수 세기
+    for label in labels.view(-1):
+        counts[label] += 1
+
+    return counts.tolist()

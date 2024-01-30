@@ -3457,7 +3457,8 @@ num_labels_mapping = {
     "cb": 3, 
     "ag_news": 4,
     "yelp_polarity": 2,
-    "ecommerce" : 868
+    "ecommerce" : 511,
+    "ecommerce_cate" : 241
 }
 
 output_modes_mapping = {
@@ -3489,7 +3490,8 @@ output_modes_mapping = {
     "cb": "classification",
     "ag_news": "classification",
     "yelp_polarity": "classification",
-    "ecommerce" : "classification"
+    "ecommerce" : "classification",
+    "ecommerce_cate" : "classification"
 }
 
 # For regression task only: median
