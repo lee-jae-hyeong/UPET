@@ -59,6 +59,13 @@ def get_trainer(args):
     model = get_model(data_args, model_args, TaskType.SEQUENCE_CLASSIFICATION, config)
     if data_args.dataset_name == 'ecommerce':
         path = "/content/drive/MyDrive/UPET/ecommerce"
+    elif data_args.dataset_name == 'ecommerce_cate':
+        path = "/content/drive/MyDrive/UPET/ecommerce_cate"
+    elif data_args.dataset_name == 'ecommerce_cate_top':
+        path = "/content/drive/MyDrive/UPET/ecommerce_cate_top"
+
+    if "ecommerce" in data_args.dataset_name:
+        
         raw_datasets = load_from_disk(path)
         new_token = raw_datasets["train"].features["label"].names
         tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)

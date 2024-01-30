@@ -52,7 +52,9 @@ task_to_test_key = {
     "sst2": "accuracy",
     "stsb": "accuracy",
     "wnli": "accuracy",
-    "ecommerce" : "accuracy"
+    "ecommerce" : "accuracy",
+    "ecommerce_cate" : "accuracy",
+    "ecommerce_cate_top" : "accuracy"
 }
 
 task_to_keys = {
@@ -65,7 +67,9 @@ task_to_keys = {
     "sst2": ("sentence", None),
     "stsb": ("sentence1", "sentence2"),
     "wnli": ("sentence1", "sentence2"),
-    "ecommerce" : ("sentence", None)
+    "ecommerce" : ("sentence", None),
+    "ecommerce_cate" : ("sentence" , None),
+    "ecommerce_cate_top" : ("sentence", None)
 }
 
 task_to_template = {
@@ -76,7 +80,9 @@ task_to_template = {
     "qqp": [None, {"prefix_template": " <mask> ,", "suffix_template": ""}],
     "rte": [None, {"prefix_template": " ? <mask> , ", "suffix_template": ""}], # prefix / suffix template in each segment.
     "sst2": [{"prefix_template": "", "suffix_template": "It was <mask> ."}, None], # prefix / suffix template in each segment.
-    "ecommerce" : [{"prefix_template" : "", "suffix_template" : "브랜드는 <mask> ."}, None]
+    "ecommerce" : [{"prefix_template" : "", "suffix_template" : "브랜드는 <mask> ."}, None],
+    "ecommerce_cate" : [{"prefix_template" : "", "suffix_template" : "하위 카테고리는 <mask> ."}, None],
+    "ecommerce_cate_top" : [{"prefix_template" : "", "suffix_template" : "상위 카테고리는 <mask> ."}, None]
     
 }
 
@@ -98,7 +104,22 @@ if os.path.exists(ecommerce_path):
         e['ecommerce'] = ecommerce_label_words_mapping
         label_words_mapping.update(e)
     
+ecommerce_path = "/content/drive/MyDrive/UPET/ecommerce_cate.json"
+if os.path.exists(ecommerce_path):
+    with open('/content/drive/MyDrive/UPET/ecommerce_cate.json', 'r') as file:
+        e = {}
+        ecommerce_label_words_mapping = json.load(file)
+        e['ecommerce_cate'] = ecommerce_label_words_mapping
+        label_words_mapping.update(e)
 
+ecommerce_path = "/content/drive/MyDrive/UPET/ecommerce_cate_top.json"
+
+if os.path.exists(ecommerce_path):
+    with open('/content/drive/MyDrive/UPET/ecommerce_cate_top.json', 'r') as file:
+        e = {}
+        ecommerce_label_words_mapping = json.load(file)
+        e['ecommerce_cate_top'] = ecommerce_label_words_mapping
+        label_words_mapping.update(e)
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +137,12 @@ class GlueDataset():
 
         if data_args.dataset_name == "ecommerce":
             path = "/content/drive/MyDrive/UPET/ecommerce"
+            raw_datasets = load_from_disk(path)
+        elif data_args.dataset_name == "ecommerce_cate":
+            path = "/content/drive/MyDrive/UPET/ecommerce_cate"
+            raw_datasets = load_from_disk(path)
+        elif data_args.dataset_name == "ecommerce_cate_top":
+            path = "/content/drive/MyDrive/UPET/ecommerce_cate_top"
             raw_datasets = load_from_disk(path)
         else:
             raw_datasets = load_dataset("glue", data_args.dataset_name)
@@ -162,7 +189,7 @@ class GlueDataset():
                 if self.label_to_word[key][0] not in ['<', '[', '.', ',']:
                     # Make sure space+word is in the vocabulary
 
-                    if data_args.dataset_name == 'ecommerce':
+                    if "ecommerce" in data_args.dataset_name:
                         new_token = self.label_list
                         new_tokens = set(new_token) - set(tokenizer.vocab.keys())
                         tokenizer.add_tokens(list(new_tokens))
@@ -248,7 +275,7 @@ class GlueDataset():
             if semi_training_args.use_semi is True:
                 self.unlabeled_dataset = self.all_train_dataset.select(un_selected_idx_list)
                 print("The number of unlabeled data is {}".format(len(self.unlabeled_dataset)))
-        if data_args.dataset_name == "ecommerce":
+        if "ecommerce" in data_args.dataset_name:
             self.metric = load_metric("accuracy")
         else:
             self.metric = load_metric("./metrics/glue", data_args.dataset_name)
