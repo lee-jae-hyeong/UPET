@@ -12,6 +12,7 @@ from model.utils import get_model, TaskType
 from tasks.glue.dataset import GlueDataset
 from training.trainer_base import BaseTrainer
 from training.self_trainer import SelfTrainer
+from datasets import load_from_disk
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ def get_trainer(args):
     elif data_args.dataset_name == 'ecommerce_cate_top':
         path = "/content/drive/MyDrive/UPET/ecommerce_cate_top"
 
-    if "ecommerce" in data_args.dataset_name:
+    if data_args.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
         
         raw_datasets = load_from_disk(path)
         new_token = raw_datasets["train"].features["label"].names
@@ -78,8 +79,9 @@ def get_trainer(args):
         model_args.pre_seq_len = semi_training_args.student_pre_seq_len
         student_model = get_model(data_args, model_args, TaskType.SEQUENCE_CLASSIFICATION, config)
 
-        if data_args.dataset_name == 'ecommerce':
+        if data_args.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
             student_model.resize_token_embeddings(len(tokenizer))
+
         trainer = SelfTrainer(
             teacher_base_model=model,
             student_base_model=student_model,

@@ -189,7 +189,7 @@ class GlueDataset():
                 if self.label_to_word[key][0] not in ['<', '[', '.', ',']:
                     # Make sure space+word is in the vocabulary
 
-                    if "ecommerce" in data_args.dataset_name:
+                    if self.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
                         new_token = self.label_list
                         new_tokens = set(new_token) - set(tokenizer.vocab.keys())
                         tokenizer.add_tokens(list(new_tokens))
