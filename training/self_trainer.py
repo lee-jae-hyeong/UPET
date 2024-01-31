@@ -140,8 +140,9 @@ class TeacherTrainer(BaseTrainer):
             is_sample = False
 
         else:
-            if self.dataset_name == 'ecommerce':
+            if self.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
                 is_sample=False
+                logger.info(f"***** mc_evaulate_dataset_name : {self.dataset_name} & is_sample : {is_sample} *****")
         
         if is_sample:
             recalled_examples_idx_list = random_sampling(
