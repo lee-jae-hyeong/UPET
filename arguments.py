@@ -215,8 +215,13 @@ class ModelArguments:
         default=0.1,
         metadata={
             "help": "The dropout probability used in the models"
-        }
-    )
+        })
+    
+    cb_loss : bool = field(
+        default=False,
+        metadata={
+            "help": "Class Balance Loss"})
+
 
 
 @dataclass

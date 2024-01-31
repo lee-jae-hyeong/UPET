@@ -208,7 +208,8 @@ def get_model(data_args, model_args, task_type: TaskType, config: AutoConfig, fi
     
     # whether to fixed parameters of backbone (use pe)
     config.use_pe = model_args.use_pe
-
+    config.cb_loss = model_args.cb_loss
+    
     if model_args.head_only:
         model_class = AUTO_MODELS[task_type]
         model = model_class.from_pretrained(
