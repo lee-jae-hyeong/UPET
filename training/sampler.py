@@ -9,6 +9,16 @@ import logging
 import numpy as np
 import os
 import random
+import torch
+
+random_seed = 42
+torch.manual_seed(random_seed)
+torch.cuda.manual_seed(random_seed)
+torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+np.random.seed(random_seed)
+random.seed(random_seed)
 
 
 logger = logging.getLogger('UST_RES')
@@ -55,6 +65,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	BALD_acq = get_BALD_acquisition(y_T)
 	#BALD_acq = (1. - BALD_acq)/np.sum(1. - BALD_acq)
 	# 2024.01.19 reliable examples sampling 코드 구현 미비로 인해 추가
+	# add by ljh
 	scf_index = np.argmax(y_mean, axis = 1)
 	scf = y_mean[np.arange(len(y_mean)), scf_index]
 	sct = (1 - BALD_acq)
@@ -95,6 +106,10 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		if len(X_input_ids) == 0: # add by wjn
 			continue
 		indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
+		# add by ljh
+		if len(set(indices)) != samples_per_class:
+			logger.info ("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class)) 
+			print("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class))
 		X_s_input_ids.extend(X_input_ids[indices])
 		# X_s_token_type_ids.extend(X_token_type_ids[indices])
 		X_s_attention_mask.extend(X_attention_mask[indices])
