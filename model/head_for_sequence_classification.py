@@ -18,7 +18,16 @@ from model.deberta import DebertaModel, DebertaPreTrainedModel, ContextPooler, S
 
 from model.model_adaptation import BertAdaModel, RobertaAdaModel, init_adapter
 from model.parameter_freeze import ParameterFreeze # add by wjn
-import copy
+import copy, random
+
+random_seed = 42
+torch.manual_seed(random_seed)
+torch.cuda.manual_seed(random_seed)
+torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+np.random.seed(random_seed)
+random.seed(random_seed)
 
 freezer = ParameterFreeze()
 
@@ -546,7 +555,7 @@ class RobertForSequenceClassification(RobertaPreTrainedModel):
 
                 if self.config.cb_loss:
                     no_of_classes=self.num_labels
-                    sample_per_cls=count_classes(labels.view(-1))
+                    sample_per_cls=np.bincount(labels.view(-1))
                     loss = CB_loss(logits.view(-1, self.num_labels), labels.view(-1), sample_per_cls, no_of_classes, loss_type=self.loss_type, beta=0.9) 
                 else:
                     loss_fct = CrossEntropyLoss()
@@ -695,7 +704,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
 
                 if self.config.cb_loss:
                     no_of_classes=self.num_labels
-                    sample_per_cls=count_classes(labels.view(-1))
+                    sample_per_cls=np.bincount(labels.view(-1))
                     loss = CB_loss(logits.view(-1, self.num_labels), labels.view(-1), sample_per_cls, no_of_classes, loss_type=self.loss_type, beta=0.9) 
                 else:
                     loss_fct = CrossEntropyLoss()
@@ -830,7 +839,7 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
 
                 if self.config.cb_loss:
                     no_of_classes=self.num_labels
-                    sample_per_cls=count_classes(labels.view(-1))
+                    sample_per_cls=np.bincount(labels.view(-1))
                     loss = CB_loss(logits.view(-1, self.num_labels), labels.view(-1), sample_per_cls, no_of_classes, loss_type=self.loss_type, beta=0.9) 
                 else:
                     loss_fct = CrossEntropyLoss()
