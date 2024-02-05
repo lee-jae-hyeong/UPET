@@ -28,6 +28,16 @@ from training.sampler import sample_by_bald_class_easiness
 from training.trainer_base import BaseTrainer
 #2024.01.18 pytorch_model.bin to model.safetensor change
 from safetensors.torch import load_model, save_model, load_file
+import random
+
+random_seed = 42
+torch.manual_seed(random_seed)
+torch.cuda.manual_seed(random_seed)
+torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+np.random.seed(random_seed)
+random.seed(random_seed)
 
 
 logger = logging.get_logger('Self-training')
@@ -66,7 +76,8 @@ class DatasetK(Dataset):
 
 
 # add by wjn
-def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16):
+def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16, random_seed=42):
+    np.random.seed(random_seed)
     label_list = raw_datasets["label"] # [0, 1, 0, 0, ...]
     label_dict = dict()
     # 记录每个label对应的样本索引
@@ -98,7 +109,8 @@ class TeacherTrainer(BaseTrainer):
             callbacks: Optional[List[TrainerCallback]] = None,
             optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (None, None),
             test_key: str = "accuracy",
-            dataset_name=None
+            dataset_name=None,
+            random_seed : int = None
     ):
         super(TeacherTrainer, self).__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer, model_init, compute_metrics, callbacks, optimizers)
         self.predict_dataset = eval_dataset
@@ -113,6 +125,7 @@ class TeacherTrainer(BaseTrainer):
         })
         self.global_step_ = 0
         self.dataset_name=dataset_name
+        
     
 
     def mc_evaluate(
@@ -140,17 +153,23 @@ class TeacherTrainer(BaseTrainer):
             is_sample = False
 
         else:
-            if self.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
-                is_sample=False
-                logger.info(f"***** mc_evaulate_dataset_name : {self.dataset_name} & is_sample : {is_sample} *****")
+            logger.info ("Evaluating uncertainty on {} number of instances sampled from {} unlabeled instances".format(unlabeled_data_num, unlabeled_dataset)) 
+            indices = np.random.choice(len(unlabeled_dataset), unlabeled_data_num, replace=False)
+            unlabeled_dataset = unlabeled_dataset.select(indices)
+            unlabeled_data_num = len(unlabeled_dataset)           
+
+        # else:
+        #     if self.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
+        #         is_sample=False
+        #         logger.info(f"***** mc_evaulate_dataset_name : {self.dataset_name} & is_sample : {is_sample} *****")
         
-        if is_sample:
-            recalled_examples_idx_list = random_sampling(
-                raw_datasets=unlabeled_dataset, 
-                num_examples_per_label=unlabeled_data_num // num_classes
-            )
-            unlabeled_dataset = unlabeled_dataset.select(recalled_examples_idx_list)
-            unlabeled_data_num = len(unlabeled_dataset)
+        # if is_sample:
+        #     recalled_examples_idx_list = random_sampling(
+        #         raw_datasets=unlabeled_dataset, 
+        #         num_examples_per_label=unlabeled_data_num // num_classes
+        #     )
+        #     unlabeled_dataset = unlabeled_dataset.select(recalled_examples_idx_list)
+        #     unlabeled_data_num = len(unlabeled_dataset)
 
         unlabeled_dataloader = self.get_eval_dataloader(unlabeled_dataset)
         model = self._wrap_model(self.model, training=True, dataloader=unlabeled_dataloader) # reset training to True
@@ -494,7 +513,7 @@ class SelfTrainer(object):
             print("* Sampling reliable pseudo-labeled data. *")
             print("*"*42)
             
-            X_batch, y_batch, _ = sample_by_bald_class_easiness(
+            X_batch, y_batch, w_batch = sample_by_bald_class_easiness(
                 tokenizer=self.tokenizer, 
                 X=unlabeled_dataset, 
                 y_mean=y_mean, 
@@ -505,14 +524,35 @@ class SelfTrainer(object):
                 y_T=y_T,
                 alpha=self.alpha)
             
+            # add by ljh(copy UST)
+            if not self.semi_training_args == "confidence":
+                logger.info("* Confidence Learning Not Operation*")
+                X_conf = np.ones(len(X_batch['input_ids']))
+
+            else :    
+                logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
+                X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
+            
             pseudo_labeled_examples = X_batch
             pseudo_labeled_examples["label"] = y_batch
+            # add by ljh
+            pseudo_labeled_examples["weight"] = X_conf
             
             # 生成pseudo-labeled dataset，并与labeled data混合
             # pseudo_labeled_dataset = DatasetDict()
+
+            # revise by ljh
             pseudo_labeled_dataset = DatasetK.from_dict(pseudo_labeled_examples)
             for i in range(len(self.train_dataset)):
-                pseudo_labeled_dataset = pseudo_labeled_dataset.add_item(self.train_dataset[i])
+                tmp_dataset=self.train_dataset[i]
+
+                if not self.training_args == "confidence":
+                    tmp_dataset["weight"] = 1
+                else:
+                    labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
+                    tmp_dataset["weight"] = labeled_data_conf
+
+                pseudo_labeled_dataset = pseudo_labeled_dataset.add_item(tmp_dataset)
 
             # 初始化一个新的Student模型，并让Student模型在pseudo-labeled data上进行鲁棒学习
             logger.info("*"*56)
@@ -583,7 +623,7 @@ class SelfTrainer(object):
             
             post_sample_num = int(y_pred.shape[0] * 0.5)
             
-            X_batch, y_batch, _ = sample_by_bald_class_easiness(
+            X_batch, y_batch, w_batch = sample_by_bald_class_easiness(
                 tokenizer=self.tokenizer, 
                 X=unlabeled_dataset, 
                 y_mean=y_mean, 
