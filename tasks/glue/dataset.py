@@ -54,7 +54,7 @@ task_to_test_key = {
     "wnli": "accuracy",
     "ecommerce" : "accuracy",
     "ecommerce_cate" : "accuracy",
-    "ecommerce_cate_top" : "accuracy"
+    "e_cate2" : "accuracy"
 }
 
 task_to_keys = {
@@ -69,7 +69,7 @@ task_to_keys = {
     "wnli": ("sentence1", "sentence2"),
     "ecommerce" : ("sentence", None),
     "ecommerce_cate" : ("sentence" , None),
-    "ecommerce_cate_top" : ("sentence", None)
+    "e_cate2" : ("sentence", None)
 }
 
 task_to_template = {
@@ -80,9 +80,9 @@ task_to_template = {
     "qqp": [None, {"prefix_template": " <mask> ,", "suffix_template": ""}],
     "rte": [None, {"prefix_template": " ? <mask> , ", "suffix_template": ""}], # prefix / suffix template in each segment.
     "sst2": [{"prefix_template": "", "suffix_template": "It was <mask> ."}, None], # prefix / suffix template in each segment.
-    "ecommerce" : [{"prefix_template" : "", "suffix_template" : "브랜드는 <mask> ."}, None],
-    "ecommerce_cate" : [{"prefix_template" : "", "suffix_template" : "하위 카테고리는 <mask> ."}, None],
-    "ecommerce_cate_top" : [{"prefix_template" : "", "suffix_template" : "상위 카테고리는 <mask> ."}, None]
+    #"ecommerce" : [{"prefix_template" : "", "suffix_template" : "브랜드는 <mask> ."}, None],
+    #"ecommerce_cate" : [{"prefix_template" : "", "suffix_template" : "하위 카테고리는 <mask> ."}, None],
+    #"ecommerce_cate_top" : [{"prefix_template" : "", "suffix_template" : "상위 카테고리는 <mask> ."}, None]
     
 }
 
@@ -144,6 +144,8 @@ class GlueDataset():
         elif data_args.dataset_name == "ecommerce_cate_top":
             path = "/content/drive/MyDrive/UPET/ecommerce_cate_top"
             raw_datasets = load_from_disk(path)
+        elif data_args.dataset_name == "e_cate2":
+            path = "/content/drive/MyDrive/UPET/e_cate2"
         else:
             raw_datasets = load_dataset("glue", data_args.dataset_name)
 
@@ -276,6 +278,8 @@ class GlueDataset():
                 self.unlabeled_dataset = self.all_train_dataset.select(un_selected_idx_list)
                 print("The number of unlabeled data is {}".format(len(self.unlabeled_dataset)))
         if "ecommerce" in data_args.dataset_name:
+            self.metric = load_metric("accuracy")
+        elif data_args.dataset_name == "e_cate2":
             self.metric = load_metric("accuracy")
         else:
             self.metric = load_metric("./metrics/glue", data_args.dataset_name)
