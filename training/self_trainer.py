@@ -616,7 +616,7 @@ class SelfTrainer(object):
 
             unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
-                unlabeled_data_num=20480,
+                unlabeled_data_num=30000,
                 T=5, 
                 num_classes=self.num_classes
                 )
