@@ -221,6 +221,11 @@ class ModelArguments:
         default=False,
         metadata={
             "help": "Class Balance Loss"})
+    cb_loss_beta : float = field(
+        default=0.99,
+        metadata={
+        "cb_loss ratio"}
+    )
 
 
 
@@ -298,8 +303,18 @@ class SemiSupervisedArguments:
             "help": "Reliable Example Sampling model confiden and certainty ratio"
         }
     )
-
-
+    confidence : bool = field(
+        default=False,
+        metadata={
+            "help": "Confidence Learning check - Var by MC dropout"
+        }
+    )
+    conf_alpha : Optional[float] = field(
+        default=0.1,
+        metadata={
+            "help": "Confidence Learning Rate"
+        }
+    )
 
 
 @dataclass
