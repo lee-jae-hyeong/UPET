@@ -67,11 +67,11 @@ def get_trainer(args):
     elif data_args.dataset_name == 'e_cate2':
         path = "/content/drive/MyDrive/UPET/e_cate2"
 
-    if data_args.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top", "e_cate2"]:
+    # if data_args.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top", "e_cate2"]:
         
-        raw_datasets = load_from_disk(path)
-        new_token = raw_datasets["train"].features["label"].names
-        tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
+    #     raw_datasets = load_from_disk(path)
+    #     new_token = raw_datasets["train"].features["label"].names
+    #     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
         # new_tokens = set(new_token) - set(tokenizer.vocab.keys())
         # tokenizer.add_tokens(list(new_tokens))
         # model.resize_token_embeddings(len(tokenizer))
