@@ -146,6 +146,7 @@ class GlueDataset():
             raw_datasets = load_from_disk(path)
         elif data_args.dataset_name == "e_cate2":
             path = "/content/drive/MyDrive/UPET/e_cate2"
+            raw_datasets = load_from_disk(path)
         else:
             raw_datasets = load_dataset("glue", data_args.dataset_name)
 
