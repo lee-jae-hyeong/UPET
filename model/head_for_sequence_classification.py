@@ -193,6 +193,7 @@ class BertPrefixForSequenceClassification(BertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
+        weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -236,7 +237,9 @@ class BertPrefixForSequenceClassification(BertPreTrainedModel):
                 else:
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
-                loss_fct = CrossEntropyLoss()
+                print("크로스_엔트로피_시작")
+                print("*"*80)
+                loss_fct = CrossEntropyLoss(weight=weight)
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
