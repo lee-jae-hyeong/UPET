@@ -224,7 +224,7 @@ class ModelArguments:
     cb_loss_beta : float = field(
         default=0.99,
         metadata={
-        "cb_loss ratio"}
+        "help" : "cb_loss ratio"}
     )
 
 
