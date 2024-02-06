@@ -108,7 +108,10 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
 		# add by ljh
 		if len(set(indices)) != samples_per_class:
-			logger.info ("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class)) 
+			print("samples_per_class : {}".format(samples_per_class))
+			print("samples_per_class : {}".format(len(set(indices))))
+			
+			logger.info ("{}_Not Enough data ratio".format(len(set(indices)), samples_per_class)) 
 			print("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class))
 		X_s_input_ids.extend(X_input_ids[indices])
 		# X_s_token_type_ids.extend(X_token_type_ids[indices])
