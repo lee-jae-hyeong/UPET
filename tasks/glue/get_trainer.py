@@ -64,8 +64,10 @@ def get_trainer(args):
         path = "/content/drive/MyDrive/UPET/ecommerce_cate"
     elif data_args.dataset_name == 'ecommerce_cate_top':
         path = "/content/drive/MyDrive/UPET/ecommerce_cate_top"
+    elif data_args.dataset_name == 'e_cate2':
+        path = "/content/drive/MyDrive/UPET/e_cate2"
 
-    if data_args.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
+    if data_args.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top", "e_cate2"]:
         
         raw_datasets = load_from_disk(path)
         new_token = raw_datasets["train"].features["label"].names
