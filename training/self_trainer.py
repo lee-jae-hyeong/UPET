@@ -523,11 +523,13 @@ class SelfTrainer(object):
                 num_classes=self.num_classes, 
                 y_T=y_T,
                 alpha=self.alpha)
+
+            print(w_batch, len(w_batch))
             
             # add by ljh(copy UST)
-            if not self.semi_training_args == "confidence":
+            if not self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Not Operation*")
-                X_conf = np.ones(len(X_batch['input_ids']))
+                X_conf = np.ones(len(y_batch))
 
             else :    
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
@@ -546,8 +548,9 @@ class SelfTrainer(object):
             for i in range(len(self.train_dataset)):
                 tmp_dataset=self.train_dataset[i]
 
-                if not self.training_args == "confidence":
-                    tmp_dataset["weight"] = 1
+                if not self.semi_training_args.confidence:
+                    tmp_dataset["weight"] = 1.0
+                    
                 else:
                     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
                     tmp_dataset["weight"] = labeled_data_conf
@@ -616,7 +619,7 @@ class SelfTrainer(object):
 
             unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
-                unlabeled_data_num=30000,
+                unlabeled_data_num=40000,
                 T=5, 
                 num_classes=self.num_classes
                 )
