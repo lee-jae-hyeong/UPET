@@ -43,28 +43,58 @@ def evaluate(trainer):
 
     trainer.log_metrics("eval", metrics)
     trainer.save_metrics("eval", metrics)
-
+    
 def predict(trainer, predict_dataset=None):
     if predict_dataset is None:
         logger.info("No dataset is available for testing")
 
     elif isinstance(predict_dataset, dict):
-        
+        predicted_labels = {}
         for dataset_name, d in predict_dataset.items():
             logger.info("*** Predict: %s ***" % dataset_name)
             predictions, labels, metrics = trainer.predict(d, metric_key_prefix="predict")
             predictions = np.argmax(predictions, axis=2)
 
+            predicted_labels[dataset_name] = predictions.tolist()
+
             trainer.log_metrics("predict", metrics)
             trainer.save_metrics("predict", metrics)
+
+        return predicted_labels
 
     else:
         logger.info("*** Predict ***")
         predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
         predictions = np.argmax(predictions, axis=2)
 
+        predicted_labels = predictions.tolist()
+
         trainer.log_metrics("predict", metrics)
         trainer.save_metrics("predict", metrics)
+
+        return predicted_labels
+
+# def predict(trainer, predict_dataset=None):
+#     if predict_dataset is None:
+#         logger.info("No dataset is available for testing")
+
+#     elif isinstance(predict_dataset, dict):
+        
+#         for dataset_name, d in predict_dataset.items():
+#             logger.info("*** Predict: %s ***" % dataset_name)
+#             predictions, labels, metrics = trainer.predict(d, metric_key_prefix="predict")
+#             predictions = np.argmax(predictions, axis=2)
+
+#             trainer.log_metrics("predict", metrics)
+#             trainer.save_metrics("predict", metrics)
+
+#     else:
+#         logger.info("*** Predict ***")
+#         predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
+#         predictions = np.argmax(predictions, axis=2)
+
+#         trainer.log_metrics("predict", metrics)
+#         trainer.save_metrics("predict", metrics)
 
 if __name__ == '__main__':
 
@@ -148,7 +178,7 @@ if __name__ == '__main__':
     # if training_args.do_eval:
     #     evaluate(trainer)
 
-    # if training_args.do_predict:
-    #     predict(trainer, predict_dataset)
+    if training_args.do_predict:
+        predict(trainer, predict_dataset)
 
    
