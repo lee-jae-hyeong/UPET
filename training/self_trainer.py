@@ -36,7 +36,7 @@ torch.cuda.manual_seed(random_seed)
 torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
-np.random.seed(random_seed)
+#np.random.seed(random_seed)
 random.seed(random_seed)
 
 
@@ -76,7 +76,11 @@ class DatasetK(Dataset):
 
 
 # add by wjn
-def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16, random_seed=42):
+def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16):
+    number = [2, 12, 22, 32, 42, 52, 62, 72, 82, 92, 102]
+    
+    np.random.choice(number)
+    
     np.random.seed(random_seed)
     label_list = raw_datasets["label"] # [0, 1, 0, 0, ...]
     label_dict = dict()
