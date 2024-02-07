@@ -247,7 +247,7 @@ class GlueDataset():
                 self.train_dataset = self.train_dataset.select(range(data_args.max_train_samples))
 
         if training_args.do_eval:
-            self.eval_dataset = raw_datasets["validation_matched" if data_args.dataset_name == "mnli" else "validation"]
+            self.eval_dataset = raw_datasets["validation_matched" if data_args.dataset_name == "mnli" else "test"]
             if data_args.max_eval_samples is not None:
                 self.eval_dataset = self.eval_dataset.select(range(data_args.max_eval_samples))
 
