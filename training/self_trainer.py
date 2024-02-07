@@ -293,9 +293,9 @@ class SelfTrainer(object):
         self.student_base_model = student_base_model
         self.training_args = training_args
         self.semi_training_args = semi_training_args
-        self.train_dataset = train_dataset
-        self.unlabeled_dataset = unlabeled_dataset
-        self.eval_dataset = eval_dataset
+        self.train_dataset = train_dataset.shuffle()
+        self.unlabeled_dataset = unlabeled_dataset.shuffle()
+        self.eval_dataset = eval_dataset.shuffle()
         self.compute_metrics = compute_metrics
         self.tokenizer = tokenizer
         self.teacher_data_collator = teacher_data_collator
