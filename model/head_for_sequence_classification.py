@@ -237,10 +237,16 @@ class BertPrefixForSequenceClassification(BertPreTrainedModel):
                 else:
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
-                print("크로스_엔트로피_시작")
-                print("*"*80)
-                loss_fct = CrossEntropyLoss(weight=weight)
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                if not weight is None:
+                  print(weight)
+                  loss_fct = CrossEntropyLoss(reduction="none")
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss = (loss * torch.tensor(weight)).mean()
+
+                else:
+                  loss_fct = CrossEntropyLoss()
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
