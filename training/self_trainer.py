@@ -649,10 +649,13 @@ class SelfTrainer(object):
             if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
                 X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
+                pseudo_labeled_examples = X_batch
+                pseudo_labeled_examples["label"] = y_batch
+                pseudo_labeled_examples["weight"] = X_conf
                 
-            pseudo_labeled_examples = X_batch
-            pseudo_labeled_examples["label"] = y_batch
-            pseudo_labeled_examples["weight"] = X_conf
+            else:
+                pseudo_labeled_examples = X_batch
+                pseudo_labeled_examples["label"] = y_batch               
             
             # 生成pseudo-labeled dataset
             # pseudo_labeled_dataset = DatasetDict()
