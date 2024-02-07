@@ -81,8 +81,7 @@ def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16):
     # number = [2, 12, 22, 32, 42, 52, 62, 72, 82, 92, 102]
     
     # np.random.choice(number)
-    
-    np.random.seed(random_seed)
+
     label_list = raw_datasets["label"] # [0, 1, 0, 0, ...]
     label_dict = dict()
     # 记录每个label对应的样本索引
