@@ -294,7 +294,16 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
 
         self.prefix_tokens = torch.arange(self.pre_seq_len).long()
         self.prefix_encoder = torch.nn.Embedding(self.pre_seq_len, config.hidden_size)
-    
+        
+        bert_param = 0
+        for name, param in self.bert.named_parameters():
+            bert_param += param.numel()
+        all_param = 0
+        for name, param in self.named_parameters():
+            all_param += param.numel()
+        total_param = all_param - bert_param
+        print('total param is {}'.format(total_param)) # 9860105
+        
     def freeze_backbone(self, use_pe: bool=True):
         if use_pe:
             self.bert = freezer.freeze_lm(self.bert)
