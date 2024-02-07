@@ -78,6 +78,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 
 	samples_per_class = num_samples // num_classes
 	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
+	not_sample = 0
 	for label in range(num_classes):
 		# X_input_ids, X_token_type_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['token_type_ids'])[y == label], np.array(X['attention_mask'])[y == label]
 		X_input_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['attention_mask'])[y == label]
@@ -104,6 +105,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		# print("p_norm=", p_norm)
 		# print("replace=", replace)
 		if len(X_input_ids) == 0: # add by wjn
+			not_sample += 1
 			continue
 		indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
 		# add by ljh
@@ -122,6 +124,8 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			X_s_mask_pos.extend(X_mask_pos[indices])
 		y_s.extend(y_[indices])
 		w_s.extend(y_var_[indices][:,0])
+
+	print("{}_SAMPLING_FAIL_COUNT".format(not_sample))
 	# X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s = shuffle(X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s)
 	if "token_type_ids" in X.features and "mask_pos" not in X.features:
 		X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s = shuffle(X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s)
