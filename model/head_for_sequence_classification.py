@@ -67,6 +67,7 @@ class BertForSequenceClassification(BertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
+        weight=None
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
@@ -110,8 +111,17 @@ class BertForSequenceClassification(BertPreTrainedModel):
                 else:
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                
+                if not weight is None:
+                  print(weight)
+                  loss_fct = CrossEntropyLoss(reduction="none")
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss = (loss * torch.tensor(weight)).mean()
+
+                else:
+                  loss_fct = CrossEntropyLoss()
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                    
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
@@ -308,6 +318,7 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
+        weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -362,8 +373,15 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
                 else:
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                if not weight is None:
+                  print(weight)
+                  loss_fct = CrossEntropyLoss(reduction="none")
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss = (loss * torch.tensor(weight)).mean()
+
+                else:
+                  loss_fct = CrossEntropyLoss()
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
@@ -412,6 +430,7 @@ class BertAdapterForSequenceClassification(BertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
+        weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -461,8 +480,17 @@ class BertAdapterForSequenceClassification(BertPreTrainedModel):
                 else:
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                
+                if not weight is None:
+                  print(weight)
+                  loss_fct = CrossEntropyLoss(reduction="none")
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss = (loss * torch.tensor(weight)).mean()
+
+                else:
+                  loss_fct = CrossEntropyLoss()
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                    
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
@@ -517,6 +545,7 @@ class RobertForSequenceClassification(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
+        weight=None
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
@@ -562,13 +591,15 @@ class RobertForSequenceClassification(RobertaPreTrainedModel):
 
             elif self.config.problem_type == "single_label_classification":
 
-                if self.config.cb_loss:
-                    no_of_classes=self.num_labels
-                    sample_per_cls=np.bincount(labels.view(-1))
-                    loss = CB_loss(logits.view(-1, self.num_labels), labels.view(-1), sample_per_cls, no_of_classes, loss_type=self.loss_type, beta=0.9) 
+                if not weight is None:
+                  print(weight)
+                  loss_fct = CrossEntropyLoss(reduction="none")
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss = (loss * torch.tensor(weight)).mean()
+
                 else:
-                    loss_fct = CrossEntropyLoss()
-                    loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss_fct = CrossEntropyLoss()
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
 
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
@@ -659,6 +690,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
+        weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -711,16 +743,16 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
 
             elif self.config.problem_type == "single_label_classification":
 
-                if self.config.cb_loss:
-                    no_of_classes=self.num_labels
-                    sample_per_cls=np.bincount(labels.view(-1))
-                    loss = CB_loss(logits.view(-1, self.num_labels), labels.view(-1), sample_per_cls, no_of_classes, loss_type=self.loss_type, beta=0.9) 
+                if not weight is None:
+                  print(weight)
+                  loss_fct = CrossEntropyLoss(reduction="none")
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss = (loss * torch.tensor(weight)).mean()
+
                 else:
-                    loss_fct = CrossEntropyLoss()
-                    loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            
-                # loss_fct = CrossEntropyLoss()
-                # loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss_fct = CrossEntropyLoss()
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
@@ -789,6 +821,7 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
+        weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -846,13 +879,15 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
 
-                if self.config.cb_loss:
-                    no_of_classes=self.num_labels
-                    sample_per_cls=np.bincount(labels.view(-1))
-                    loss = CB_loss(logits.view(-1, self.num_labels), labels.view(-1), sample_per_cls, no_of_classes, loss_type=self.loss_type, beta=0.9) 
+                if not weight is None:
+                  print(weight)
+                  loss_fct = CrossEntropyLoss(reduction="none")
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss = (loss * torch.tensor(weight)).mean()
+
                 else:
-                    loss_fct = CrossEntropyLoss()
-                    loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss_fct = CrossEntropyLoss()
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                     
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
@@ -902,6 +937,7 @@ class RobertaAdapterForSequenceClassification(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
+        weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -953,8 +989,16 @@ class RobertaAdapterForSequenceClassification(RobertaPreTrainedModel):
                 else:
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                
+                if not weight is None:
+                  print(weight)
+                  loss_fct = CrossEntropyLoss(reduction="none")
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                  loss = (loss * torch.tensor(weight)).mean()
+
+                else:
+                  loss_fct = CrossEntropyLoss()
+                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                 
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
