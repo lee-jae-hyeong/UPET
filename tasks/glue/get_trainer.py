@@ -101,8 +101,11 @@ def get_trainer(args):
             num_classes=len(dataset.label2id),
             dataset_name=data_args.dataset_name
         )
-
-        return trainer, None
+        if training_args.do_predict:
+            predict_dataset = dataset.predict_dataset
+        else:
+            predict_dataset = None
+        return trainer, predict_dataset
 
     trainer = BaseTrainer(
         model=model,
@@ -114,5 +117,9 @@ def get_trainer(args):
         data_collator=dataset.data_collator,
         test_key=dataset.test_key,
     )
-
-    return trainer, None
+    if training_args.do_predict:
+        predict_dataset = dataset.predict_dataset
+    else:
+        predict_dataset = None
+    return trainer, predict_dataset
+    # return trainer, None
