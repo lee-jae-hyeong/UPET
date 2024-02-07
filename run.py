@@ -8,6 +8,7 @@ import datasets
 import transformers
 from transformers import set_seed, Trainer
 from transformers.trainer_utils import get_last_checkpoint
+from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
 
 from arguments import get_args
 
@@ -179,6 +180,6 @@ if __name__ == '__main__':
     #     evaluate(trainer)
 
     if training_args.do_predict:
-        predict(trainer, predict_dataset)
+        predicted_labels=predict(trainer, predict_dataset)
 
    
