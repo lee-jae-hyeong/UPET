@@ -527,33 +527,34 @@ class SelfTrainer(object):
             print(w_batch, len(w_batch))
             
             # add by ljh(copy UST)
-            if not self.semi_training_args.confidence:
-                logger.info("* Confidence Learning Not Operation*")
-                X_conf = np.ones(len(y_batch))
-
-            else :    
+            if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
                 X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
+                pseudo_labeled_examples = X_batch
+                pseudo_labeled_examples["label"] = y_batch
+                pseudo_labeled_examples["weight"] = X_conf
+                
+            else:
+                pseudo_labeled_examples = X_batch
+                pseudo_labeled_examples["label"] = y_batch               
             
-            pseudo_labeled_examples = X_batch
-            pseudo_labeled_examples["label"] = y_batch
-            # add by ljh
-            pseudo_labeled_examples["weight"] = X_conf
-            
-            # 生成pseudo-labeled dataset，并与labeled data混合
+            # 生成pseudo-labeled dataset
             # pseudo_labeled_dataset = DatasetDict()
-
-            # revise by ljh
             pseudo_labeled_dataset = DatasetK.from_dict(pseudo_labeled_examples)
+            
             for i in range(len(self.train_dataset)):
                 tmp_dataset=self.train_dataset[i]
 
-                if not self.semi_training_args.confidence:
-                    tmp_dataset["weight"] = 1.0
-                    
-                else:
+                if self.semi_training_args.confidence:
                     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
                     tmp_dataset["weight"] = labeled_data_conf
+                    
+                # if not self.semi_training_args.confidence:
+                #     tmp_dataset["weight"] = 1.0
+                    
+                # else:
+                #     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
+                #     tmp_dataset["weight"] = labeled_data_conf
 
                 pseudo_labeled_dataset = pseudo_labeled_dataset.add_item(tmp_dataset)
 
