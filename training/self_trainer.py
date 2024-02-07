@@ -31,17 +31,13 @@ from safetensors.torch import load_model, save_model, load_file
 import random
 
 random_seed = 42
-number = [2, 12, 22, 32, 42, 52, 62, 72, 82, 92, 102]
-
-number = np.random.choice(number)
-print("{}_np.random.seed_select".formnat(number))
 
 torch.manual_seed(random_seed)
 torch.cuda.manual_seed(random_seed)
 torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
-np.random.seed(number)
+#np.random.seed(random_seed)
 random.seed(random_seed)
 
 
