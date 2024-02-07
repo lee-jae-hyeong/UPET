@@ -638,7 +638,7 @@ class SelfTrainer(object):
                 alpha=self.alpha)
             
             # add by ljh(copy UST)
-            if not self.semi_training_args == "confidence":
+            if not self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Not Operation*")
                 X_conf = np.ones(len(X_batch['input_ids']))
 
@@ -654,7 +654,18 @@ class SelfTrainer(object):
             # 生成pseudo-labeled dataset
             # pseudo_labeled_dataset = DatasetDict()
             pseudo_labeled_dataset = DatasetK.from_dict(pseudo_labeled_examples)
+            
+            for i in range(len(self.train_dataset)):
+                tmp_dataset=self.train_dataset[i]
 
+                if not self.semi_training_args.confidence:
+                    tmp_dataset["weight"] = 1.0
+                    
+                else:
+                    labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
+                    tmp_dataset["weight"] = labeled_data_conf
+
+                pseudo_labeled_dataset = pseudo_labeled_dataset.add_item(tmp_dataset)
 
             # 初始化一个新的Student模型，并让Student模型在pseudo-labeled data上进行鲁棒学习
             logger.info("*"*56)
