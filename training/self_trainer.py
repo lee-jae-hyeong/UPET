@@ -550,7 +550,7 @@ class SelfTrainer(object):
                 alpha=self.alpha)
 
             print(w_batch, len(w_batch))
-            print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + len(self.train_dataset)))
+            print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
             
             # add by ljh(copy UST)
             if self.semi_training_args.confidence:
