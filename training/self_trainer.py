@@ -76,26 +76,12 @@ class DatasetK(Dataset):
         self.custom_cache_files = custom_cache_files
 
 def get_class_balanced_loss_weight(samples_per_cls, no_of_classes, beta = 0.99):
-        """Compute the Class Balanced Loss between `logits` and the ground truth `labels`.
-    Class Balanced Loss: ((1-beta)/(1-beta^n))*Loss(labels, logits)
-    where Loss is one of the standard losses used for Neural Networks.
-    Args:
-      labels: A int tensor of size [batch].
-      logits: A float tensor of size [batch, no_of_classes].
-      samples_per_cls: A python list of size [no_of_classes].
-      no_of_classes: total number of classes. int
-      loss_type: string. One of "sigmoid", "focal", "softmax".
-      beta: float. Hyperparameter for Class balanced loss.
-      gamma: float. Hyperparameter for Focal loss.
-    Returns:
-      cb_loss: A float tensor representing class balanced loss
-    """
     
     effective_num = 1.0 - np.power(beta, samples_per_cls)
     weights = (1.0 - beta) / np.array(effective_num)
     weights = weights / np.sum(weights) * no_of_classes
 
-    assert len(weights) == len(samples_per_cls) "num_class == weight_length "
+    assert len(weights) == len(samples_per_cls)
     return weights
 # add by wjn
 # revise by ljh
@@ -146,7 +132,7 @@ class TeacherTrainer(BaseTrainer):
             optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (None, None),
             test_key: str = "accuracy",
             dataset_name=None,
-            random_seed : int = None
+            random_seed : int = None,
             class_weights: Optional[List[float]] = None
     ):
         super(TeacherTrainer, self).__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer, model_init, compute_metrics, callbacks, optimizers, class_weights)
@@ -363,7 +349,7 @@ class SelfTrainer(object):
         self.alpha = self.semi_training_args.alpha
         self.dataset_name = dataset_name
         self.cb_loss_beta = self.semi_training_args.cb_loss_beta
-        self.cb_loss = self.semi_training_args.cb_loss
+        self.cb_loss = self.semi_training_args.cb_loss
 
     def get_teacher_trainer(
         self, 
