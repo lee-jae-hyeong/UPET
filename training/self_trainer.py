@@ -579,7 +579,9 @@ class SelfTrainer(object):
             print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
             class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
+            get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.)
             
+            get_class_balanced_loss_weight(samples_per_cls, no_of_classes, beta = 0.99):
             # add by ljh(copy UST)
             if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
