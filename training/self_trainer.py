@@ -126,8 +126,9 @@ class TeacherTrainer(BaseTrainer):
             test_key: str = "accuracy",
             dataset_name=None,
             random_seed : int = None
+            class_weights: Optional[List[float]] = None
     ):
-        super(TeacherTrainer, self).__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer, model_init, compute_metrics, callbacks, optimizers)
+        super(TeacherTrainer, self).__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer, model_init, compute_metrics, callbacks, optimizers, class_weights)
         self.predict_dataset = eval_dataset
         self.test_key = test_key
         # if self.args.do_adv:
@@ -268,9 +269,10 @@ class RobustTrainer(TeacherTrainer):
             compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None,
             callbacks: Optional[List[TrainerCallback]] = None,
             optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (None, None),
-            test_key: str = "accuracy"
+            test_key: str = "accuracy",
+            class_weights: Optional[List[float]] = None
     ):
-        super(RobustTrainer, self).__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer, model_init, compute_metrics, callbacks, optimizers)
+        super(RobustTrainer, self).__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer, model_init, compute_metrics, callbacks, optimizers, class_weights)
         self.predict_dataset = eval_dataset
         self.test_key = test_key
         # if self.args.do_adv:
@@ -345,6 +347,7 @@ class SelfTrainer(object):
         base_model: torch.nn.Module, 
         num_train_epochs: int,
         output_dir: str = None,
+        class_weights: Optional[List[float]] = None
         ):
         training_args = self.training_args
         training_args.num_train_epochs = num_train_epochs
@@ -360,7 +363,8 @@ class SelfTrainer(object):
             tokenizer=self.tokenizer,
             data_collator=self.teacher_data_collator,
             test_key=self.test_key,
-            dataset_name=self.dataset_name
+            dataset_name=self.dataset_name,
+            class_weights=class_weights
         )
         return teacher_trainer
 
@@ -372,6 +376,7 @@ class SelfTrainer(object):
         student_learning_rate: float,
         pseudo_labeled_dataset: Optional[Dataset] = None, 
         output_dir: str = None,
+        class_weights: Optional[List[float]] = None
         ):
         training_args = self.training_args
         training_args.num_train_epochs = num_train_epochs
@@ -388,6 +393,7 @@ class SelfTrainer(object):
             tokenizer=self.tokenizer,
             data_collator=self.student_data_collator,
             test_key=self.test_key,
+            class_weights=class_weights
         )
         return student_trainer
 
