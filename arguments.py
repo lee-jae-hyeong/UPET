@@ -311,7 +311,7 @@ class SemiSupervisedArguments:
         metadata={
             "help": "Class Balance Loss"})
     
-    cb_loss_beta : float = field(
+    cb_loss_beta : Optional[float] = field(
         default=0.99,
         metadata={
         "help" : "cb_loss ratio"}
