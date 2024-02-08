@@ -363,6 +363,7 @@ class SelfTrainer(object):
         self.alpha = self.semi_training_args.alpha
         self.dataset_name = dataset_name
         self.cb_loss_beta = self.semi_training_args.cb_loss_beta
+        self.cb_loss = self.semi_training_args.cb_loss
 
     def get_teacher_trainer(
         self, 
@@ -579,9 +580,10 @@ class SelfTrainer(object):
 
             print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
-            
-            class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
-            class_weight=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
+
+            if self.cb_loss:
+                class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
+                class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
   
             # add by ljh(copy UST)
             if self.semi_training_args.confidence:
@@ -630,7 +632,8 @@ class SelfTrainer(object):
                 num_train_epochs=self.student_training_epoch,
                 student_learning_rate=self.student_learning_rate,
                 pseudo_labeled_dataset=pseudo_labeled_dataset,
-                output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter))
+                output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter)),
+                class_weights=class_weights
             )
             student_trainer.train()
             #2024.01.18 코드 수정
@@ -706,9 +709,11 @@ class SelfTrainer(object):
             
             print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
-            
-            class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
-            class_weight=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
+
+
+            if self.cb_loss:
+                class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
+                class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
             
             if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
@@ -756,7 +761,8 @@ class SelfTrainer(object):
                 num_train_epochs=self.student_training_epoch if len(pseudo_labeled_dataset) <= 4096 else int(self.student_training_epoch / 2),
                 student_learning_rate=self.student_learning_rate,
                 pseudo_labeled_dataset=pseudo_labeled_dataset,
-                output_dir=os.path.join(self.output_dir, "student_iter_{}".format(iter))
+                output_dir=os.path.join(self.output_dir, "student_iter_{}".format(iter)),
+                class_weights=class_weights
             )
             student_trainer.train()
             # 2024.01.18 코드 수정
