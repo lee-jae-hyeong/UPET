@@ -646,10 +646,10 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
         elif self.num_labels > 2:
             self.loss_type = 'softmax'
 
-        for param in self.roberta.parameters():
-            param.requires_grad = False
-        # if self.config.use_pe:
-        #     self.roberta = freezer.freeze_lm(self.roberta)
+        # for param in self.roberta.parameters():
+        #     param.requires_grad = False
+        if self.config.use_pe:
+            self.roberta = freezer.freeze_lm(self.roberta)
         
         self.pre_seq_len = config.pre_seq_len
         self.n_layer = config.num_hidden_layers
