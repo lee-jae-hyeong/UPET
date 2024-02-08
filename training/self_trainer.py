@@ -90,9 +90,13 @@ def get_class_balanced_loss_weight(samples_per_cls, no_of_classes, beta = 0.99):
     Returns:
       cb_loss: A float tensor representing class balanced loss
     """
+    
     effective_num = 1.0 - np.power(beta, samples_per_cls)
     weights = (1.0 - beta) / np.array(effective_num)
-    pass
+    weights = weights / np.sum(weights) * no_of_classes
+
+    assert len(weights) == len(samples_per_cls) "num_class == weight_length "
+    return weights
 # add by wjn
 # revise by ljh
 def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16, least_num=10):
