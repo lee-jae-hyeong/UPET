@@ -67,7 +67,8 @@ class BertForSequenceClassification(BertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        weight=None
+        weight=None,
+        class_weights=None
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
@@ -114,12 +115,13 @@ class BertForSequenceClassification(BertPreTrainedModel):
                 
                 if not weight is None:
                   print(weight)
-                  loss_fct = CrossEntropyLoss(reduction="none")
+                  loss_fct = CrossEntropyLoss(weight = class_weights, reduction="none")
+
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight)).mean()
 
                 else:
-                  loss_fct = CrossEntropyLoss()
+                  loss_fct = CrossEntropyLoss(weight = class_weights)
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                     
             elif self.config.problem_type == "multi_label_classification":
@@ -704,7 +706,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
         output_hidden_states=None,
         return_dict=None,
         weight=None,
-        class_weight=None
+        class_weights=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -759,7 +761,8 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
 
                 if not weight is None:
                   print(weight)
-                  loss_fct = CrossEntropyLoss(reduction="none")
+                  print(class_weights)
+                  loss_fct = CrossEntropyLoss(weight = class_weights, reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight)).mean()
 
@@ -768,7 +771,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
 
             elif self.config.problem_type == "multi_label_classification":
-                loss_fct = BCEWithLogitsLoss()
+                loss_fct = BCEWithLogitsLoss(weight = class_weights)
                 loss = loss_fct(logits, labels)
         if not return_dict:
             output = (logits,) + outputs[2:]
