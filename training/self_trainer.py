@@ -568,8 +568,8 @@ class SelfTrainer(object):
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
 
             if self.cb_loss:
-                logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
-                logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
+                logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
+                logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
                 class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
                 class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
   
@@ -700,8 +700,8 @@ class SelfTrainer(object):
 
 
             if self.cb_loss:
-                logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
-                logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
+                logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
+                logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
                 
                 class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
                 class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
