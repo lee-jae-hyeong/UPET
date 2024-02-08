@@ -217,15 +217,6 @@ class ModelArguments:
             "help": "The dropout probability used in the models"
         })
     
-    cb_loss : bool = field(
-        default=False,
-        metadata={
-            "help": "Class Balance Loss"})
-    cb_loss_beta : float = field(
-        default=0.99,
-        metadata={
-        "help" : "cb_loss ratio"}
-    )
 
 
 
@@ -314,6 +305,16 @@ class SemiSupervisedArguments:
         metadata={
             "help": "Confidence Learning Rate"
         }
+    )
+    cb_loss : bool = field(
+        default=False,
+        metadata={
+            "help": "Class Balance Loss"})
+    
+    cb_loss_beta : float = field(
+        default=0.99,
+        metadata={
+        "cb_loss ratio"}
     )
 
 
