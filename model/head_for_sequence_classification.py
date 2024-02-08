@@ -203,7 +203,8 @@ class BertPrefixForSequenceClassification(BertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        weight=None
+        weight=None,
+        class_weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -327,7 +328,8 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        weight=None
+        weight=None,
+        class_weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -439,7 +441,8 @@ class BertAdapterForSequenceClassification(BertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        weight=None
+        weight=None,
+        class_weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -554,7 +557,8 @@ class RobertForSequenceClassification(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        weight=None
+        weight=None,
+        class_weight=None
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
@@ -699,7 +703,8 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        weight=None
+        weight=None,
+        class_weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -839,7 +844,8 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        weight=None
+        weight=None,
+        class_weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -955,7 +961,8 @@ class RobertaAdapterForSequenceClassification(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        weight=None
+        weight=None,
+        class_weight=None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
