@@ -77,7 +77,8 @@ class DatasetK(Dataset):
 
 
 # add by wjn
-def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16):
+# revise by ljh
+def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16, least_num=10):
     # number = [2, 12, 22, 32, 42, 52, 62, 72, 82, 92, 102]
     
     # np.random.choice(number)
@@ -89,14 +90,24 @@ def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16):
         if label not in label_dict.keys():
             label_dict[label] = list()
         label_dict[label].append(ei)
+
     # 对于每个类别，随机采样k个样本
     few_example_ids = list()
     for label, eid_list in label_dict.items():
         # examples = deepcopy(eid_list)
         # shuffle(examples)
-        idxs = np.random.choice(len(eid_list), size=num_examples_per_label, replace=False)
+        idxs = np.random.choice(len(eid_list), size=least_num, replace=False)
         selected_eids = [eid_list[i] for i in idxs]
         few_example_ids.extend(selected_eids)
+
+    remain_examples_num= (num_examples_per_label-least_num)*len(label_dict.keys())
+    print('모자란 갯수 : ', remain_examples_num)
+    idxs = np.random.choice(len(raw_datasets), size=remain_examples_num, replace=False)
+    few_example_ids.extend(idxs)
+    
+    few_example_ids = list(set(few_example_ids))
+    print(len(few_example_ids), '_중복제거샘플')
+
     return few_example_ids
 
 class TeacherTrainer(BaseTrainer):
@@ -155,12 +166,22 @@ class TeacherTrainer(BaseTrainer):
         if unlabeled_data_num == -1 or unlabeled_data_num >= len(unlabeled_dataset):
             unlabeled_data_num = len(unlabeled_dataset)
             is_sample = False
+            print('샘플링 하지 않음')
 
         else:
+            recalled_examples_idx_list = random_sampling(
+            raw_datasets=unlabeled_dataset, 
+            num_examples_per_label=unlabeled_data_num // num_classes, least_num=10)
             logger.info ("Evaluating uncertainty on {} number of instances sampled from {} unlabeled instances".format(unlabeled_data_num, unlabeled_dataset)) 
-            indices = np.random.choice(len(unlabeled_dataset), unlabeled_data_num, replace=False)
-            unlabeled_dataset = unlabeled_dataset.select(indices)
-            unlabeled_data_num = len(unlabeled_dataset)           
+            unlabeled_dataset = unlabeled_dataset.select(recalled_examples_idx_list)
+            unlabeled_data_num = len(unlabeled_dataset)
+            print('샘플링 한다.')
+
+        # else:
+        #     logger.info ("Evaluating uncertainty on {} number of instances sampled from {} unlabeled instances".format(unlabeled_data_num, unlabeled_dataset)) 
+        #     indices = np.random.choice(len(unlabeled_dataset), unlabeled_data_num, replace=False)
+        #     unlabeled_dataset = unlabeled_dataset.select(indices)
+        #     unlabeled_data_num = len(unlabeled_dataset)           
 
         # else:
         #     if self.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
