@@ -362,6 +362,7 @@ class SelfTrainer(object):
         self.output_dir = self.training_args.output_dir
         self.alpha = self.semi_training_args.alpha
         self.dataset_name = dataset_name
+        self.cb_loss_beta = self.semi_training_args.cb_loss_beta
 
     def get_teacher_trainer(
         self, 
@@ -578,10 +579,10 @@ class SelfTrainer(object):
 
             print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
-            class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
-            get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.)
             
-            get_class_balanced_loss_weight(samples_per_cls, no_of_classes, beta = 0.99):
+            class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
+            class_weight=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
+  
             # add by ljh(copy UST)
             if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
@@ -702,7 +703,13 @@ class SelfTrainer(object):
             # else :    
             #     logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
             #     X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
-
+            
+            print(w_batch, len(w_batch))
+            print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
+            
+            class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
+            class_weight=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
+            
             if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
                 X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
