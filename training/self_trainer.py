@@ -583,6 +583,7 @@ class SelfTrainer(object):
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
                 pseudo_labeled_examples["weight"] = X_conf
+                pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(pseudo_labeled_examples), axis=0)
                 
             else:
                 pseudo_labeled_examples = X_batch
@@ -627,9 +628,6 @@ class SelfTrainer(object):
                 output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter)),
                 class_weights=class_weights
             )
-            if self.cb_loss:
-                print('cb_loss_weights : ', class_weights)
-                cb_loss_weight(student_trainer, class_weights)
             student_trainer.train()
             #2024.01.18 코드 수정
             load_model(student_model, os.path.join(student_trainer.state.best_model_checkpoint, "model.safetensors"))
@@ -719,7 +717,7 @@ class SelfTrainer(object):
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
                 pseudo_labeled_examples["weight"] = X_conf
-                
+                pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(pseudo_labeled_examples), axis=0)
             else:
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch               
@@ -763,9 +761,7 @@ class SelfTrainer(object):
                 output_dir=os.path.join(self.output_dir, "student_iter_{}".format(iter)),
                 class_weights=class_weights
             )
-            if self.cb_loss:
-                print('cb_loss_weights : ', class_weights)
-                cb_loss_weight(student_trainer, class_weights)
+
                 
             student_trainer.train()
             # 2024.01.18 코드 수정
