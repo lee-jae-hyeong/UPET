@@ -413,7 +413,9 @@ class SelfTrainer(object):
             pass
         return model
 
-
+    def cb_loss_weight(self, model, class_weights=None):
+        model.get_cb_loss_weight(class_weights=class_weights)
+    
     def train(self, resume_from_checkpoint=None):
         if not os.path.exists(os.path.join(self.output_dir, "iteration")):
             os.makedirs(os.path.join(self.output_dir, "iteration"))
@@ -626,6 +628,9 @@ class SelfTrainer(object):
                 output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter)),
                 class_weights=class_weights
             )
+            if self.cb_loss:
+                print('cb_loss_weights : ', class_weights)
+                cb_loss_weight(student_trainer, class_weights)
             student_trainer.train()
             #2024.01.18 코드 수정
             load_model(student_model, os.path.join(student_trainer.state.best_model_checkpoint, "model.safetensors"))
@@ -750,8 +755,7 @@ class SelfTrainer(object):
             
             student_model = self.student_base_model
             student_model = self.freeze_backbone(student_model, use_pe=True)
-            if self.cb_loss:
-                student_model.class_weights = class_weights
+
             student_trainer: RobustTrainer = self.get_student_trainer(
                 base_model=student_model, 
                 num_train_epochs=self.student_training_epoch if len(pseudo_labeled_dataset) <= 4096 else int(self.student_training_epoch / 2),
@@ -760,6 +764,10 @@ class SelfTrainer(object):
                 output_dir=os.path.join(self.output_dir, "student_iter_{}".format(iter)),
                 class_weights=class_weights
             )
+            if self.cb_loss:
+                print('cb_loss_weights : ', class_weights)
+                cb_loss_weight(student_trainer, class_weights)
+                
             student_trainer.train()
             # 2024.01.18 코드 수정
             load_model(student_model, os.path.join(student_trainer.state.best_model_checkpoint, "model.safetensors"))
