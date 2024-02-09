@@ -778,7 +778,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
                   print(class_weights[0], len(class_weights))
                   loss_fct = CrossEntropyLoss(weight = class_weights[0], reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-                  loss = (loss * torch.tensor(weight)).mean()
+                  loss = (loss * torch.tensor(weight).clone().detach()).mean()
 
                 else:
                   loss_fct = CrossEntropyLoss()
@@ -924,7 +924,7 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
                   print(weight)
                   loss_fct = CrossEntropyLoss(reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-                  loss = (loss * torch.tensor(weight)).mean()
+                  loss = (loss * torch.tensor(weight).clone().detach()).mean()
 
                 else:
                   loss_fct = CrossEntropyLoss()
