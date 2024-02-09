@@ -430,7 +430,13 @@ class BertAdapterForSequenceClassification(BertPreTrainedModel):
         else:
             self.bert = freezer.unfreeze_lm(self.bert)
     
+    def get_cb_loss_weight(self, class_weights=None):
 
+        if class_weights is None:
+            self.class_weights = None
+
+        else:
+            self.class_weights = class_weights
     def forward(
         self,
         input_ids=None,
@@ -673,7 +679,14 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
             self.roberta = freezer.freeze_lm(self.roberta)
         else:
             self.roberta = freezer.unfreeze_lm(self.roberta)
+            
+    def get_cb_loss_weight(self, class_weights=None):
 
+        if class_weights is None:
+            self.class_weights = None
+
+        else:
+            self.class_weights = class_weights
     
     def get_prompt(self, batch_size):
         prefix_tokens = self.prefix_tokens.unsqueeze(0).expand(batch_size, -1).to(self.roberta.device)
@@ -763,7 +776,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
                 if not weight is None:
                   print(weight)
                   print(self.class_weights)
-                  loss_fct = CrossEntropyLoss(weight = class_weights, reduction="none")
+                  loss_fct = CrossEntropyLoss(weight = self.class_weights, reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight)).mean()
 
