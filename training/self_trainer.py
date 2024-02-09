@@ -618,8 +618,7 @@ class SelfTrainer(object):
             
             student_model = self.student_base_model
             student_model = self.freeze_backbone(student_model, use_pe=True)
-            if self.cb_loss:
-                student_model.class_weights = class_weights
+
             student_trainer: RobustTrainer = self.get_student_trainer(
                 base_model=student_model, 
                 num_train_epochs=self.student_training_epoch,
