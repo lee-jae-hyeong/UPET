@@ -572,6 +572,7 @@ class SelfTrainer(object):
                 logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
                 class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
                 class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
+                
   
             # add by ljh(copy UST)
             if self.semi_training_args.confidence:
@@ -615,6 +616,8 @@ class SelfTrainer(object):
             
             student_model = self.student_base_model
             student_model = self.freeze_backbone(student_model, use_pe=True)
+            if self.cb_loss:
+                student_model.class_weights = class_weights
             student_trainer: RobustTrainer = self.get_student_trainer(
                 base_model=student_model, 
                 num_train_epochs=self.student_training_epoch,
