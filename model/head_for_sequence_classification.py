@@ -687,6 +687,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
             self.n_head,
             self.n_embd
         )
+        self.class_weights = None
         # print("past_key_values[0].shape=", past_key_values[0].shape)
         past_key_values = self.dropout(past_key_values)
         past_key_values = past_key_values.permute([2, 0, 3, 1, 4]).split(2)
@@ -758,10 +759,10 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
                     loss = loss_fct(logits, labels)
 
             elif self.config.problem_type == "single_label_classification":
-
+                
                 if not weight is None:
                   print(weight)
-                  print(class_weights)
+                  print(self.class_weights)
                   loss_fct = CrossEntropyLoss(weight = class_weights, reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight)).mean()
@@ -806,7 +807,7 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
             self.loss_type = 'sigmoid'
         elif len(self.num_labels) > 2:
             self.loss_type = 'softmax'
-        
+        self.class_weights = None
         self.pre_seq_len = config.pre_seq_len
         self.n_layer = config.num_hidden_layers
         self.n_head = config.num_attention_heads
