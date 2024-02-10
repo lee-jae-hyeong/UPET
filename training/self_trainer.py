@@ -691,8 +691,8 @@ class SelfTrainer(object):
                 alpha=self.alpha,
                 cb_loss=self.cb_loss)
             
-            num_samples = int(num_samples * 1.2)
-            self.unlabeled_data_num = int(self.unlabeled_data_num * 1.1)
+            #num_samples = int(num_samples * 1.2)
+            #self.unlabeled_data_num = int(self.unlabeled_data_num * 1.1)
 
             print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
@@ -816,7 +816,7 @@ class SelfTrainer(object):
                 y_var=y_var, 
                 y=y_pred, 
                 num_samples=post_sample_num, 
-                num_classes=self.num_classes, 
+                num_classes=55000, 
                 y_T=y_T,
                 alpha=self.alpha,
                 cb_loss=self.cb_loss)
