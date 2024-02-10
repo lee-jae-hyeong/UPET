@@ -688,7 +688,8 @@ class SelfTrainer(object):
                 num_samples=int(y_pred.shape[0] * self.pseudo_sample_num_or_ratio) if self.pseudo_sample_num_or_ratio <= 1.0 else int(self.pseudo_sample_num_or_ratio), 
                 num_classes=self.num_classes, 
                 y_T=y_T,
-                alpha=self.alpha)
+                alpha=self.alpha,
+                cb_loss=self.cb_loss)
 
             print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
@@ -814,7 +815,8 @@ class SelfTrainer(object):
                 num_samples=post_sample_num, 
                 num_classes=self.num_classes, 
                 y_T=y_T,
-                alpha=self.alpha)
+                alpha=self.alpha,
+                cb_loss=self.cb_loss)
             
             # add by ljh(copy UST)
             # if self.semi_training_args.confidence:
