@@ -378,13 +378,17 @@ class SelfTrainer(object):
             class_weights=class_weights
         )
         return teacher_trainer
+def predict_data(self, trainer, predict_dataset=None, log_file_path=None):
+    if predict_dataset is None:
+        logger.info("No dataset is available for testing")
+        return
 
-    def predict_data(self, trainer, predict_dataset=None):
-        if predict_dataset is None:
-            logger.info("No dataset is available for testing")
+    if log_file_path is None:
+        logger.info("No log file path provided")
+        return
 
-        elif isinstance(predict_dataset, dict):
-            predicted_labels = {}
+    with open(log_file_path, "w") as f:
+        if isinstance(predict_dataset, dict):
             for dataset_name, d in predict_dataset.items():
                 logger.info("*** Predict: %s ***" % dataset_name)
                 predictions, labels, metrics = trainer.predict(d, metric_key_prefix="predict")
@@ -395,46 +399,106 @@ class SelfTrainer(object):
                 trainer.log_metrics("predict", metrics)
                 trainer.save_metrics("predict", metrics)
 
+                f.write(f"Dataset: {dataset_name}\n")
+                f.write("Metrics:\n")
+                f.write(f"{metrics}\n\n")
 
         else:
             logger.info("*** Predict ***")
             predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
-            #predictions = np.argmax(predictions, axis=2)
             predictions = np.argmax(predictions, axis=1)
-
 
             predicted_labels = predictions.tolist()
 
             trainer.log_metrics("predict", metrics)
             trainer.save_metrics("predict", metrics)
 
+            f.write("Metrics:\n")
+            f.write(f"{metrics}\n\n")
+
+        f1_score_macro = f1_score(predict_dataset['label'], predicted_labels, average="macro")
+        recall_macro = recall_score(predict_dataset['label'], predicted_labels, average="macro")
+        precision_macro = precision_score(predict_dataset['label'], predicted_labels, average="macro")
+
+        f.write(f"f1_score_macro: {f1_score_macro}\n")
+        f.write(f"recall_macro: {recall_macro}\n")
+        f.write(f"precision_macro: {precision_macro}\n")
+
+        f1_score_micro = f1_score(predict_dataset['label'], predicted_labels, average="micro")
+        recall_micro = recall_score(predict_dataset['label'], predicted_labels, average="micro")
+        precision_micro = precision_score(predict_dataset['label'], predicted_labels, average="micro")
+
+        f.write(f"f1_score_micro: {f1_score_micro}\n")
+        f.write(f"recall_micro: {recall_micro}\n")
+        f.write(f"precision_micro: {precision_micro}\n")
+
+        f1_score_weighted = f1_score(predict_dataset['label'], predicted_labels, average="weighted")
+        recall_weighted = recall_score(predict_dataset['label'], predicted_labels, average="weighted")
+        precision_weighted = precision_score(predict_dataset['label'], predicted_labels, average="weighted")
+
+        f.write(f"f1_score_weighted: {f1_score_weighted}\n")
+        f.write(f"recall_weighted: {recall_weighted}\n")
+        f.write(f"precision_weighted: {precision_weighted}\n")
+
+        accuracy = accuracy_score(predict_dataset['label'], predicted_labels)
+        f.write(f"accuracy_score: {accuracy}\n")
+
+    # def predict_data(self, trainer, predict_dataset=None):
+    #     if predict_dataset is None:
+    #         logger.info("No dataset is available for testing")
+
+    #     elif isinstance(predict_dataset, dict):
+    #         predicted_labels = {}
+    #         for dataset_name, d in predict_dataset.items():
+    #             logger.info("*** Predict: %s ***" % dataset_name)
+    #             predictions, labels, metrics = trainer.predict(d, metric_key_prefix="predict")
+    #             predictions = np.argmax(predictions, axis=2)
+
+    #             predicted_labels = predictions.tolist()
+
+    #             trainer.log_metrics("predict", metrics)
+    #             trainer.save_metrics("predict", metrics)
+
+
+    #     else:
+    #         logger.info("*** Predict ***")
+    #         predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
+    #         #predictions = np.argmax(predictions, axis=2)
+    #         predictions = np.argmax(predictions, axis=1)
+
+
+    #         predicted_labels = predictions.tolist()
+
+    #         trainer.log_metrics("predict", metrics)
+    #         trainer.save_metrics("predict", metrics)
+
             
-        f1_score_macro=f1_score(predict_dataset['label'], predicted_labels, average="macro")
-        recall_macro=recall_score(predict_dataset['label'], predicted_labels, average="macro")
-        precision_macro=precision_score(predict_dataset['label'], predicted_labels, average="macro")
+    #     f1_score_macro=f1_score(predict_dataset['label'], predicted_labels, average="macro")
+    #     recall_macro=recall_score(predict_dataset['label'], predicted_labels, average="macro")
+    #     precision_macro=precision_score(predict_dataset['label'], predicted_labels, average="macro")
         
-        print("{}_f1_score_macro".format(f1_score_macro))
-        print("{}_recall_score_macro".format(recall_macro))
-        print("{}_precision_score_macro".format(precision_macro))
+    #     print("{}_f1_score_macro".format(f1_score_macro))
+    #     print("{}_recall_score_macro".format(recall_macro))
+    #     print("{}_precision_score_macro".format(precision_macro))
 
-        f1_score_micro=f1_score(predict_dataset['label'], predicted_labels, average="micro")
-        recall_micro=recall_score(predict_dataset['label'], predicted_labels, average="micro")
-        precision_micro=precision_score(predict_dataset['label'], predicted_labels, average="micro")
+    #     f1_score_micro=f1_score(predict_dataset['label'], predicted_labels, average="micro")
+    #     recall_micro=recall_score(predict_dataset['label'], predicted_labels, average="micro")
+    #     precision_micro=precision_score(predict_dataset['label'], predicted_labels, average="micro")
         
-        print("{}_f1_score_micro".format(f1_score_macro))
-        print("{}_recall_micro".format(recall_macro))
-        print("{}_precision_micro".format(precision_macro))
+    #     print("{}_f1_score_micro".format(f1_score_macro))
+    #     print("{}_recall_micro".format(recall_macro))
+    #     print("{}_precision_micro".format(precision_macro))
 
-        f1_score_weighted=f1_score(predict_dataset['label'], predicted_labels, average="weighted")
-        recall_weighted=recall_score(predict_dataset['label'], predicted_labels, average="weighted")
-        precision_weighted=precision_score(predict_dataset['label'], predicted_labels, average="weighted")
+    #     f1_score_weighted=f1_score(predict_dataset['label'], predicted_labels, average="weighted")
+    #     recall_weighted=recall_score(predict_dataset['label'], predicted_labels, average="weighted")
+    #     precision_weighted=precision_score(predict_dataset['label'], predicted_labels, average="weighted")
         
-        print("{}_f1_score_weighted".format(f1_score_macro))
-        print("{}_recall_weighted".format(recall_macro))
-        print("{}_precision_weighted".format(precision_macro))
+    #     print("{}_f1_score_weighted".format(f1_score_macro))
+    #     print("{}_recall_weighted".format(recall_macro))
+    #     print("{}_precision_weighted".format(precision_macro))
 
-        accuracy=accuracy_score(predict_dataset['label'], predicted_labels)
-        print("{}_accuracy_score".format(accuracy))
+    #     accuracy=accuracy_score(predict_dataset['label'], predicted_labels)
+    #     print("{}_accuracy_score".format(accuracy))
     
     def get_student_trainer(
         self, 
