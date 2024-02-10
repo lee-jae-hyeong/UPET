@@ -614,9 +614,11 @@ class RobertForSequenceClassification(RobertaPreTrainedModel):
 
                 if not weight is None:
                   print(weight)
-                  loss_fct = CrossEntropyLoss(reduction="none")
+                  print("class_weights_length : ", len(class_weights[0]))
+                  loss_fct = CrossEntropyLoss(weight = class_weights[0], reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-                  loss = (loss * torch.tensor(weight)).mean()
+                  loss = (loss * torch.tensor(weight).clone().detach()).mean()
+
 
                 else:
                   loss_fct = CrossEntropyLoss()
@@ -679,14 +681,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
             self.roberta = freezer.freeze_lm(self.roberta)
         else:
             self.roberta = freezer.unfreeze_lm(self.roberta)
-            
-    def get_cb_loss_weight(self, class_weights=None):
 
-        if class_weights is None:
-            self.class_weights = None
-
-        else:
-            self.class_weights = class_weights
     
     def get_prompt(self, batch_size):
         prefix_tokens = self.prefix_tokens.unsqueeze(0).expand(batch_size, -1).to(self.roberta.device)
@@ -751,7 +746,6 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
 
         # print("labels=", labels)
         
-
         loss = None
         if labels is not None:
             labels = (labels < 0).long().to(labels.device) + labels
@@ -775,7 +769,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
                 
                 if not weight is None:
                   print(weight)
-                  print(class_weights[0], len(class_weights))
+                  print("class_weights_length : ", len(class_weights[0]))
                   loss_fct = CrossEntropyLoss(weight = class_weights[0], reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight).clone().detach()).mean()
@@ -922,9 +916,11 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
 
                 if not weight is None:
                   print(weight)
-                  loss_fct = CrossEntropyLoss(reduction="none")
+                  print("class_weights_length : ", len(class_weights[0]))
+                  loss_fct = CrossEntropyLoss(weight = class_weights[0], reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight).clone().detach()).mean()
+
 
                 else:
                   loss_fct = CrossEntropyLoss()
@@ -1034,9 +1030,11 @@ class RobertaAdapterForSequenceClassification(RobertaPreTrainedModel):
                 
                 if not weight is None:
                   print(weight)
-                  loss_fct = CrossEntropyLoss(reduction="none")
+                  print("class_weights_length : ", len(class_weights[0]))
+                  loss_fct = CrossEntropyLoss(weight = class_weights[0], reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-                  loss = (loss * torch.tensor(weight)).mean()
+                  loss = (loss * torch.tensor(weight).clone().detach()).mean()
+
 
                 else:
                   loss_fct = CrossEntropyLoss()
