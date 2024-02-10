@@ -733,6 +733,7 @@ class SelfTrainer(object):
                 if self.semi_training_args.confidence:
                     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
                     tmp_dataset["weight"] = labeled_data_conf
+                    tmp_dataset["class_weights"] = class_weights
                     
                 # if not self.semi_training_args.confidence:
                 #     tmp_dataset["weight"] = 1.0
