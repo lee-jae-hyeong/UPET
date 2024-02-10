@@ -599,7 +599,7 @@ def predict_data(self, trainer, predict_dataset=None, log_file_path=None):
         best_self_training_iteration = None
         best_teacher_model = None
 
-        self.predict_data(teacher_trainer, self.eval_dataset)
+        self.predict_data(teacher_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics"))
 
         # 多轮Teacher-Student迭代训练
         for iter in range(self.self_training_epoch):
@@ -905,5 +905,6 @@ def predict_data(self, trainer, predict_dataset=None, log_file_path=None):
         if self.semi_training_args.post_student_train:
             print("Post training {} metric: {}".format(self.test_key, post_metric))
         print("*"*68)
-
+        self.predict_data(student_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics_last"))
+        
         return TrainOutput(teacher_trainer.state.global_step, 0.0, metrics)
