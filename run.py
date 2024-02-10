@@ -37,6 +37,7 @@ def train(trainer, resume_from_checkpoint=None, last_checkpoint=None):
         trainer.log_best_metrics()
     except:
         pass
+    return trainer
 
 def evaluate(trainer):
     logger.info("*** Evaluate ***")
@@ -199,7 +200,7 @@ if __name__ == '__main__':
 
 
     if training_args.do_train:
-        train(trainer, training_args.resume_from_checkpoint, last_checkpoint)
+        trainer = train(trainer, training_args.resume_from_checkpoint, last_checkpoint)
     
     if training_args.do_eval:
         evaluate(trainer)
