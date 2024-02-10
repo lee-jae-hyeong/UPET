@@ -25,7 +25,7 @@ def train(trainer, resume_from_checkpoint=None, last_checkpoint=None):
     elif last_checkpoint is not None:
         checkpoint = last_checkpoint
     train_result = trainer.train(resume_from_checkpoint=checkpoint)
-    # trainer.save_model()，
+    trainer.save_model()
     
     try:
         metrics = train_result.metrics
