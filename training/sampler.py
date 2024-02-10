@@ -57,7 +57,7 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
@@ -115,7 +115,10 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			
 			logger.info ("{}_Not Enough data ratio".format(len(set(indices)), samples_per_class)) 
 			print("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class))
-			indices = np.array(list(set(indices)))
+			if cb_loss:
+				# cb_loss 적용 시, 중복 제거
+				indices = np.array(list(set(indices)))
+				
 			
 		X_s_input_ids.extend(X_input_ids[indices])
 		# X_s_token_type_ids.extend(X_token_type_ids[indices])
