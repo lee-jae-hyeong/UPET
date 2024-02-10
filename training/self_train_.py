@@ -570,10 +570,10 @@ class SelfTrainer(object):
             print("*"*66)
             print("* Training teacher model over labeled data before self-training. *")
             print("*"*66)
-
-            teacher_trainer.train()
+            load_model(teacher_model, os.path.join("/content/drive/MyDrive/UPET/checkpoints/self-training/e_cate2-roberta-base/head_prefix/checkpoint-644", "model.safetensors"))
+            #teacher_trainer.train()
             #2024.01.18 코드 수정
-            load_model(teacher_model, os.path.join(teacher_trainer.state.best_model_checkpoint, "model.safetensors"))
+            #load_model(teacher_model, os.path.join(teacher_trainer.state.best_model_checkpoint, "model.safetensors"))
             #teacher_model.load_state_dict(torch.load(os.path.join(teacher_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
             teacher_trainer.model = teacher_model
 
@@ -602,7 +602,21 @@ class SelfTrainer(object):
         self.predict_data(teacher_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics"))
 
         # 多轮Teacher-Student迭代训练
-        for iter in range(self.self_training_epoch):
+        for iter in range(1, self.self_training_epoch):
+
+            if iter == 1: 
+                student_model = self.student_base_model
+                student_model = self.freeze_backbone(student_model, use_pe=True)
+                load_model(student_model, os.path.join("/content/drive/MyDrive/UPET/checkpoints/self-training/e_cate2-roberta-base/head_prefix/iteration/student_iter_0/checkpoint-66500/", "model.safetensors"))
+                
+                teacher_model = student_model
+                # teacher_trainer = student_trainer
+                teacher_trainer: TeacherTrainer = self.get_teacher_trainer(
+                    base_model=student_model, 
+                    num_train_epochs=self.teacher_tuning_epoch, 
+                    output_dir=os.path.join(self.output_dir, "iteration", "teacher_iter_{}".format(iter))
+                )
+                metrics = teacher_trainer.evaluate()
 
             logger.info("*"*34)
             logger.info("* Self-training {}-th iteration *".format(iter))
@@ -690,10 +704,9 @@ class SelfTrainer(object):
                 y_T=y_T,
                 alpha=self.alpha,
                 cb_loss=self.cb_loss)
-            
-            #num_samples = int(num_samples * 1.2)
-            #self.unlabeled_data_num = int(self.unlabeled_data_num * 1.1)
-
+        
+            #num_samples = int(num_samples*1.5)
+            #self.unlabeled_data_num = int(self.unlabeled_data_num*1.1)
             print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
 
@@ -746,8 +759,9 @@ class SelfTrainer(object):
             print("* Training a new student model on pseudo-labeled data. *")
             print("*"*56)
             
-            student_model = self.student_base_model
-            student_model = self.freeze_backbone(student_model, use_pe=True)
+            if iter == 0:
+                student_model = self.student_base_model
+                student_model = self.freeze_backbone(student_model, use_pe=True)
 
             student_trainer: RobustTrainer = self.get_student_trainer(
                 base_model=student_model, 
@@ -802,7 +816,7 @@ class SelfTrainer(object):
 
             unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
-                unlabeled_data_num=self.unlabeled_data_num,
+                unlabeled_data_num=55000,
                 T=5, 
                 num_classes=self.num_classes
                 )
@@ -816,7 +830,7 @@ class SelfTrainer(object):
                 y_var=y_var, 
                 y=y_pred, 
                 num_samples=post_sample_num, 
-                num_classes=55000, 
+                num_classes=self.num_classes, 
                 y_T=y_T,
                 alpha=self.alpha,
                 cb_loss=self.cb_loss)
