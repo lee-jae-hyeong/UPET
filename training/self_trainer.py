@@ -583,7 +583,7 @@ class SelfTrainer(object):
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
                 pseudo_labeled_examples["weight"] = X_conf
-                pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(pseudo_labeled_examples), axis=0)
+                pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
                 
             else:
                 pseudo_labeled_examples = X_batch
@@ -599,6 +599,7 @@ class SelfTrainer(object):
                 if self.semi_training_args.confidence:
                     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
                     tmp_dataset["weight"] = labeled_data_conf
+                    tmp_dataset["class_weights"] = class_weights
                     
                 # if not self.semi_training_args.confidence:
                 #     tmp_dataset["weight"] = 1.0
