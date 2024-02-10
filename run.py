@@ -202,10 +202,10 @@ if __name__ == '__main__':
     if training_args.do_train:
         trainer = train(trainer, training_args.resume_from_checkpoint, last_checkpoint)
     
-    if training_args.do_eval:
-        evaluate(trainer)
+    # if training_args.do_eval:
+    #     evaluate(trainer)
 
-    if training_args.do_predict:
-        predicted_labels=predict(trainer, predict_dataset)
+    # if training_args.do_predict:
+    #     predicted_labels=predict(trainer, predict_dataset)
 
    
