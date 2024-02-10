@@ -768,8 +768,8 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
                 
                 if not weight is None:
-                  print(weight)
-                  print("class_weights_length : ", len(class_weights[0]))
+                  # print(weight)
+                  # print("class_weights_length : ", len(class_weights[0]))
                   loss_fct = CrossEntropyLoss(weight = class_weights[0], reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight).clone().detach()).mean()
@@ -915,8 +915,8 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
 
                 if not weight is None:
-                  print(weight)
-                  print("class_weights_length : ", len(class_weights[0]))
+                  # print(weight)
+                  # print("class_weights_length : ", len(class_weights[0]))
                   loss_fct = CrossEntropyLoss(weight = class_weights[0], reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight).clone().detach()).mean()
