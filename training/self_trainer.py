@@ -690,6 +690,9 @@ class SelfTrainer(object):
                 y_T=y_T,
                 alpha=self.alpha,
                 cb_loss=self.cb_loss)
+            
+            num_samples = int(num_samples * 1.2)
+            self.unlabeled_data_num = int(self.unlabeled_data_num * 1.1)
 
             print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
@@ -799,7 +802,7 @@ class SelfTrainer(object):
 
             unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
-                unlabeled_data_num=55000,
+                unlabeled_data_num=self.unlabeled_data_num,
                 T=5, 
                 num_classes=self.num_classes
                 )
