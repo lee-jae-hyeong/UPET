@@ -6,6 +6,8 @@ import torch.nn as nn
 from typing import Union, Optional, Callable, List, Tuple
 from transformers import Trainer
 import datasets
+from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
+
 import numpy as np
 from typing import Optional, List
 from datasets import Dataset, DatasetInfo, NamedSplit, DatasetDict
@@ -377,6 +379,62 @@ class SelfTrainer(object):
         )
         return teacher_trainer
 
+    def predict_data(self, trainer, predict_dataset=None):
+        if predict_dataset is None:
+            logger.info("No dataset is available for testing")
+
+        elif isinstance(predict_dataset, dict):
+            predicted_labels = {}
+            for dataset_name, d in predict_dataset.items():
+                logger.info("*** Predict: %s ***" % dataset_name)
+                predictions, labels, metrics = trainer.predict(d, metric_key_prefix="predict")
+                predictions = np.argmax(predictions, axis=2)
+
+                predicted_labels = predictions.tolist()
+
+                trainer.log_metrics("predict", metrics)
+                trainer.save_metrics("predict", metrics)
+
+
+        else:
+            logger.info("*** Predict ***")
+            predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
+            #predictions = np.argmax(predictions, axis=2)
+            predictions = np.argmax(predictions, axis=1)
+
+
+            predicted_labels = predictions.tolist()
+
+            trainer.log_metrics("predict", metrics)
+            trainer.save_metrics("predict", metrics)
+
+            
+        f1_score_macro=f1_score(predict_dataset['label'], predicted_labels, average="macro")
+        recall_macro=recall_score(predict_dataset['label'], predicted_labels, average="macro")
+        precision_macro=precision_score(predict_dataset['label'], predicted_labels, average="macro")
+        
+        print("{}_f1_score_macro".format(f1_score_macro))
+        print("{}_recall_score_macro".format(recall_macro))
+        print("{}_precision_score_macro".format(precision_macro))
+
+        f1_score_micro=f1_score(predict_dataset['label'], predicted_labels, average="micro")
+        recall_micro=recall_score(predict_dataset['label'], predicted_labels, average="micro")
+        precision_micro=precision_score(predict_dataset['label'], predicted_labels, average="micro")
+        
+        print("{}_f1_score_micro".format(f1_score_macro))
+        print("{}_recall_micro".format(recall_macro))
+        print("{}_precision_micro".format(precision_macro))
+
+        f1_score_weighted=f1_score(predict_dataset['label'], predicted_labels, average="weighted")
+        recall_weighted=recall_score(predict_dataset['label'], predicted_labels, average="weighted")
+        precision_weighted=precision_score(predict_dataset['label'], predicted_labels, average="weighted")
+        
+        print("{}_f1_score_weighted".format(f1_score_macro))
+        print("{}_recall_weighted".format(recall_macro))
+        print("{}_precision_weighted".format(precision_macro))
+
+        accuracy=accuracy_score(predict_dataset['label'], predicted_labels)
+        print("{}_accuracy_score".format(accuracy))
     
     def get_student_trainer(
         self, 
@@ -477,6 +535,8 @@ class SelfTrainer(object):
         best_self_training_iteration = None
         best_teacher_model = None
 
+        self.predict_data(teacher_trainer, self.eval_dataset)
+
         # 多轮Teacher-Student迭代训练
         for iter in range(self.self_training_epoch):
 
@@ -544,7 +604,7 @@ class SelfTrainer(object):
             unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
                 unlabeled_data_num=self.unlabeled_data_num,
-                T=20, 
+                T=2, 
                 num_classes=self.num_classes
                 )
             
@@ -675,7 +735,7 @@ class SelfTrainer(object):
             unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
                 unlabeled_data_num=55000,
-                T=5, 
+                T=2, 
                 num_classes=self.num_classes
                 )
             
@@ -718,7 +778,7 @@ class SelfTrainer(object):
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
                 pseudo_labeled_examples["weight"] = X_conf
-                pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(pseudo_labeled_examples), axis=0)
+                pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
             else:
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch               
