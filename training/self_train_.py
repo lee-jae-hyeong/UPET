@@ -707,7 +707,7 @@ class SelfTrainer(object):
         
             self.pseudo_sample_num_or_ratio = int(self.pseudo_sample_num_or_ratio*1.2)
             self.unlabeled_data_num = int(self.unlabeled_data_num*1.1)
-            print('num_samples : ', self.num_samples)
+            print('num_samples : ', self.pseudo_sample_num_or_ratio)
             print('unlabeled_data_num : ', self.unlabeled_data_num)
             
             print(w_batch, len(w_batch))
