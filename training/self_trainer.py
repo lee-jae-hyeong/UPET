@@ -24,6 +24,8 @@ from transformers.trainer_pt_utils import (
     SequentialDistributedSampler, 
     nested_concat,
     )
+from transformers import EarlyStoppingCallback
+
 from transformers.utils import logging
 from transformers.trainer_utils import denumpify_detensorize, TrainOutput
 from training.sampler import sample_by_bald_class_easiness
