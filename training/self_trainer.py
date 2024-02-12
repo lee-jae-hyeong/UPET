@@ -696,7 +696,7 @@ class SelfTrainer(object):
             #num_samples = int(num_samples * 1.2)
             #self.unlabeled_data_num = int(self.unlabeled_data_num * 1.1)
 
-            print(w_batch, len(w_batch))
+            #print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
 
             if self.cb_loss:
@@ -832,7 +832,7 @@ class SelfTrainer(object):
             #     logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
             #     X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
             
-            print(w_batch, len(w_batch))
+            #print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
 
 
