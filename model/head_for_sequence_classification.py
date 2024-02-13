@@ -566,7 +566,7 @@ class RobertForSequenceClassification(RobertaPreTrainedModel):
         output_hidden_states=None,
         return_dict=None,
         weight=None,
-        class_weight=None
+        class_weights=None
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
