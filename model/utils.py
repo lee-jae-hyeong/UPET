@@ -208,6 +208,8 @@ def get_model(data_args, model_args, task_type: TaskType, config: AutoConfig, fi
     
     # whether to fixed parameters of backbone (use pe)
     config.use_pe = model_args.use_pe
+
+    print("프롬프트 사용 유무 : {}".format(config.use_pe))
     
     if model_args.head_only:
         model_class = AUTO_MODELS[task_type]
