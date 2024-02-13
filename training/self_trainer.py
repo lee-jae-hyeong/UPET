@@ -757,13 +757,15 @@ class SelfTrainer(object):
                 student_model = self.freeze_backbone(student_model, use_pe=True)
 
             else:
-                if iter == 0:
-                    print("NOT_USE_PROMPT AND STUDENT_MODEL INITIALIZE : {} ITERATION".format(iter))
-                    student_model = self.student_base_model
-                    student_model = self.freeze_backbone(student_model, use_pe=False)
+                # if iter == 0:
+                print("NOT_USE_PROMPT AND STUDENT_MODEL INITIALIZE : {} ITERATION".format(iter))
+                student_model = teacher_model
+                    # student_model = self.student_base_model
+                    # student_model = self.freeze_backbone(student_model, use_pe=False)
+                
 
-                else:
-                    print("NOT_USE_PROMPT AND STUDENT_MODEL CONTINUOUS : {} ITERATION".format(iter))
+                # else:
+                #     print("NOT_USE_PROMPT AND STUDENT_MODEL CONTINUOUS : {} ITERATION".format(iter))
                     
 
             student_trainer: RobustTrainer = self.get_student_trainer(
