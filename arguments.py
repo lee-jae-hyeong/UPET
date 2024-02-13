@@ -289,7 +289,7 @@ class SemiSupervisedArguments:
         }
     )
     alpha : Optional[float] = field(
-        default=0.4,
+        default=0.2,
         metadata={
             "help": "Reliable Example Sampling model confiden and certainty ratio"
         }
