@@ -24,7 +24,7 @@ def get_trainer(args):
         use_fast=model_args.use_fast_tokenizer,
         revision=model_args.model_revision,
     )
-
+    
     # add by wjn check if use prompt template
     use_prompt = False
     if model_args.prompt_prefix or model_args.prompt_ptuning or model_args.prompt_adapter or model_args.prompt_only:
@@ -83,7 +83,12 @@ def get_trainer(args):
 
         # if data_args.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
         #     student_model.resize_token_embeddings(len(tokenizer))
-
+        
+        if not model_args.use_pe:
+            print("NOT_USE_PROMPT")
+            
+        semi_training_args.use_pe = model_args.use_pe
+        
         trainer = SelfTrainer(
             teacher_base_model=model,
             student_base_model=student_model,
