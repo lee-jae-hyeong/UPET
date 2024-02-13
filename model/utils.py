@@ -18,7 +18,8 @@ from model.head_for_sequence_classification import (
     RobertaPrefixForSequenceClassification,
     RobertaPtuningForSequenceClassification,
     RobertaAdapterForSequenceClassification,
-    DebertaPrefixForSequenceClassification
+    DebertaPrefixForSequenceClassification,
+    RobertaForSequenceClassification
 )
 
 from model.head_for_question_answering import (
@@ -74,7 +75,7 @@ class TaskType(Enum):
 # used for head fine-tuning
 AUTO_MODELS = {
     TaskType.TOKEN_CLASSIFICATION: AutoModelForTokenClassification,
-    TaskType.SEQUENCE_CLASSIFICATION: AutoModelForSequenceClassification,
+    TaskType.SEQUENCE_CLASSIFICATION: RobertaForSequenceClassification,
     TaskType.QUESTION_ANSWERING: AutoModelForQuestionAnswering,
     TaskType.MULTIPLE_CHOICE: AutoModelForMultipleChoice,
 }
