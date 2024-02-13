@@ -530,7 +530,7 @@ class BertAdapterForSequenceClassification(BertPreTrainedModel):
 # ========= RoBERTa =========
 
 #  Vanilla Fine-tuning For RoBERTa
-class RobertForSequenceClassification(RobertaPreTrainedModel):
+class RobertaForSequenceClassification(RobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
@@ -541,11 +541,6 @@ class RobertForSequenceClassification(RobertaPreTrainedModel):
         self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         self.classifier = torch.nn.Linear(config.hidden_size, config.num_labels)
         self.init_weights()
-
-        if len(self.num_labels) == 2:
-            self.loss_type = 'sigmoid'
-        elif len(self.num_labels) > 2:
-            self.loss_type = 'softmax'
 
     def freeze_backbone(self, use_pe: bool=True):
         if use_pe:
