@@ -69,7 +69,9 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	scf_index = np.argmax(y_mean, axis = 1)
 	scf = y_mean[np.arange(len(y_mean)), scf_index]
 	sct = (1 - BALD_acq)
-
+	
+	array_BALD_acq = np.array(BALD_acq)
+	np.savetxt('/content/array.txt', array_BALD_acq)
 	res_score = ((alpha * scf) + ((1-alpha) * sct)) / (np.sum(alpha * scf) + np.sum((1 - alpha) * sct))
 	
 	BALD_acq = (1. - BALD_acq)/np.sum(1. - BALD_acq)
