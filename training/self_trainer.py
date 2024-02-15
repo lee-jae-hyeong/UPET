@@ -803,8 +803,7 @@ class SelfTrainer(object):
                 num_train_epochs=self.student_training_epoch,
                 student_learning_rate=self.student_learning_rate,
                 pseudo_labeled_dataset=pseudo_labeled_dataset,
-                output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter)),
-                class_weights=class_weights
+                output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter))
             )
             student_trainer.train()
             #2024.01.18 코드 수정
@@ -938,8 +937,7 @@ class SelfTrainer(object):
                 num_train_epochs=self.student_training_epoch if len(pseudo_labeled_dataset) <= 4096 else int(self.student_training_epoch / 2),
                 student_learning_rate=self.student_learning_rate,
                 pseudo_labeled_dataset=pseudo_labeled_dataset,
-                output_dir=os.path.join(self.output_dir, "student_iter_{}".format(iter)),
-                class_weights=class_weights
+                output_dir=os.path.join(self.output_dir, "student_iter_{}".format(iter))
             )
 
                 
