@@ -252,7 +252,7 @@ class TeacherTrainer(BaseTrainer):
                 print('변경전 1 : ', predict_proba[1])
                 predict_proba = predict_proba.detach().cpu().numpy().tolist()
 
-                if abs(k_sample) < 2:
+                if abs(k_sample_num) < 2:
                     y_T.append(predict_proba.detach().cpu().numpy().tolist())
                     
                 else:
