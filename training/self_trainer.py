@@ -245,25 +245,31 @@ class TeacherTrainer(BaseTrainer):
                 y_pred.extend(logits.detach().cpu().numpy().tolist())
             # print("y_pred.shape=", torch.Tensor(y_pred).shape) # [n, num_class]
             predict_proba = torch.softmax(torch.Tensor(y_pred).to(logits.device), -1)
+            k_sample_num = -1 * round(num_classes * k_sample)
 
             if k_sample != 0.0:
-                print('변경전 : ', predict_proba[0])
-                print('변경전 : ', predict_proba[1])
+                print('변경전 0 : ', predict_proba[0])
+                print('변경전 1 : ', predict_proba[1])
                 predict_proba = predict_proba.detach().cpu().numpy().tolist()
-                k_sample = -1 * round(num_classes * k_sample)
 
                 if abs(k_sample) < 2:
                     y_T.append(predict_proba.detach().cpu().numpy().tolist())
                     
                 else:
-                    top_indices = np.argsort(predict_proba)[:, :k_sample]
+                    top_indices = np.argsort(predict_proba)[:, :k_sample_num]
                     
                     for j in range(len(top_indices)):
                         predict_proba[j] = np.where(np.isin(np.arange(num_classes), top_indices[j]), 0, predict_proba[j])
-    
-                    print('변경후 : ', predict_proba[0])
-                    print('변경후 : ', predict_proba[1])
-                    y_T.append(predict_proba.tolist())
+
+                        row_sum = np.sum(predict_proba[j])
+                        if j < 2:
+                            print('변경 중간 0 : ', predict_proba[j])
+                            print('row_sum : ', row_sum)
+                        predict_proba[j] = predict_proba[j] / row_sum
+                    print('변경후 0 : ', predict_proba[0])
+                    print('변경후 1 : ', predict_proba[1])
+                    print("길이 : ", len(predict_proba))
+                    y_T.append(predict_proba)
                         
             
             else:
