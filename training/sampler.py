@@ -12,13 +12,13 @@ import random
 import torch
 
 random_seed = 42
-torch.manual_seed(random_seed)
-torch.cuda.manual_seed(random_seed)
-torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-np.random.seed(random_seed)
-random.seed(random_seed)
+# torch.manual_seed(random_seed)
+# torch.cuda.manual_seed(random_seed)
+# torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
+# torch.backends.cudnn.deterministic = True
+# torch.backends.cudnn.benchmark = False
+# np.random.seed(random_seed)
+# random.seed(random_seed)
 
 
 logger = logging.getLogger('UST_RES')
@@ -68,7 +68,10 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	# add by ljh
 	scf_index = np.argmax(y_mean, axis = 1)
 	scf = y_mean[np.arange(len(y_mean)), scf_index]
+	print(scf)
 	sct = (1 - BALD_acq)
+	print(sct)
+    	print(BALD_acq)
 	
 	array_BALD_acq = np.array(BALD_acq)
 	np.savetxt('/content/array.txt', array_BALD_acq)
