@@ -164,7 +164,8 @@ class TeacherTrainer(BaseTrainer):
         ignore_keys: Optional[List[str]] = None,
         metric_key_prefix: str = "eval",
         T: int = 30,
-        num_classes: int = 0
+        num_classes: int = 0,
+        k_sample : float = 0.0
     ):
         """
         Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
@@ -244,11 +245,34 @@ class TeacherTrainer(BaseTrainer):
                 y_pred.extend(logits.detach().cpu().numpy().tolist())
             # print("y_pred.shape=", torch.Tensor(y_pred).shape) # [n, num_class]
             predict_proba = torch.softmax(torch.Tensor(y_pred).to(logits.device), -1)
+
+            if k_sample != 0.0:
+                print('변경전 : ', predict_proba[0])
+                print('변경전 : ', predict_proba[1])
+                predict_proba = predict_proba.detach().cpu().numpy().tolist()
+                k_sample = -1 * round(num_classes * k_sample)
+
+                if abs(k_sample) < 2:
+                    y_T.append(predict_proba.detach().cpu().numpy().tolist())
+                    
+                else:
+                    top_indices = np.argsort(predict_proba)[:, :k_sample]
+                    
+                    for j in range(len(top_indices)):
+                        predict_proba[j] = np.where(np.isin(np.arange(num_classes), top_indices[j]), 0, predict_proba[j])
+    
+                    print('변경후 : ', predict_proba[0])
+                    print('변경후 : ', predict_proba[1])
+                    y_T.append(predict_proba.tolist())
+                        
+            
+            else:
             # print("predict_proba.shape=", predict_proba.shape) # [n, num_class]
             # y_T[i] = predict_proba.detach().cpu().numpy().tolist()
-            y_T.append(predict_proba.detach().cpu().numpy().tolist())
+                y_T.append(predict_proba.detach().cpu().numpy().tolist())
         
         y_T = np.array(y_T)
+            
         #compute mean
         y_mean = np.mean(y_T, axis=0)
         # print("y_mean.shape=", y_mean.shape) # e.g., (4095, 3) [n, class_num]
