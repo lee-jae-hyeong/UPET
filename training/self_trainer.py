@@ -236,11 +236,13 @@ class TeacherTrainer(BaseTrainer):
 
         # y_T = np.zeros((T, unlabeled_data_num, num_classes))
         y_T = list()
-
+        label = []
         for i in tqdm(range(T)):
             y_pred = []
 
             for step, inputs in enumerate(unlabeled_dataloader):
+                if i == 1:
+                    label.extend(inputs['labels'])
                 _, logits, __ = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys)
                 y_pred.extend(logits.detach().cpu().numpy().tolist())
             # print("y_pred.shape=", torch.Tensor(y_pred).shape) # [n, num_class]
@@ -289,11 +291,28 @@ class TeacherTrainer(BaseTrainer):
         y_pred = np.array([np.argmax(np.bincount(row)) for row in np.transpose(np.argmax(y_T, axis=-1))])
         assert y_pred.shape == (unlabeled_data_num,)
 
+        print(y_pred)
+        print(label)
+        matching_indices = [index for index, (item1, item2) in enumerate(zip(y_pred, label)) if item1 == item2]
+        
+        print('정확도 : ', accuracy_score(label, y_pred))
         #compute variance
         y_var = np.var(y_T, axis=0)
+        selected_values = [y_var[i] for i in matching_indices]
+        print('일치 분산 : ', np.mean(selected_values))
+
+        unmatching_indices = [index for index, (item1, item2) in enumerate(zip(y_pred, label)) if item1 != item2]
+        unselected_values = [y_var[i] for i in unmatching_indices]
+        print('불일치 분산 : ', np.mean(unselected_values))        
+        
         assert y_var.shape == (unlabeled_data_num, num_classes)
 
         return unlabeled_dataset, y_mean, y_var, y_pred, y_T
+        # #compute variance
+        # y_var = np.var(y_T, axis=0)
+        # assert y_var.shape == (unlabeled_data_num, num_classes)
+
+        # return unlabeled_dataset, y_mean, y_var, y_pred, y_T
 
 
 
