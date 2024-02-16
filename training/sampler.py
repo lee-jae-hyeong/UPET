@@ -71,7 +71,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	print(scf)
 	sct = (1 - BALD_acq)
 	print(sct)
-    	print(BALD_acq)
+
 	
 	array_BALD_acq = np.array(BALD_acq)
 	np.savetxt('/content/array.txt', array_BALD_acq)
