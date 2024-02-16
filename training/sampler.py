@@ -11,7 +11,6 @@ import os
 import random
 import torch
 from sklearn.metrics import accuracy_score
-
 random_seed = 42
 # torch.manual_seed(random_seed)
 # torch.cuda.manual_seed(random_seed)
@@ -96,8 +95,8 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		y_ = y[y==label]
 		y_var_ = y_var[y == label]
 		print('분산 평균 : ', np.mean(y_var_))
-		regular_var = np.mean(y_var_) / total_var
-		print('분산 정규화 : ', regular_var)
+		regular_var = np.sum(y_var_) / total_var
+		print('분산 정규화 : ', regular_var, '샘플링 수 :', round(num_samples*regular_var))
 
 		# p = y_mean[y == label]
 		#2024.01.19 주석 처리
@@ -124,8 +123,8 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		if not true_label is None:
 			true_label_ = true_label[y==label]
 			print('정확도 : ', accuracy_score(true_label_[indices], y_[indices]))
-			print('실제 : ', true_label_[indices], y_[indices])
-			print('수도 레이블 : ', y_[indices])
+			print('실제 : ', true_label_[indices], y_[indices])
+			print('수도 레이블 : ', y_[indices])
 		# add by ljh
 		if len(set(indices)) != samples_per_class:
 			print("samples_per_class : {}".format(samples_per_class))
