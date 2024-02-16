@@ -10,6 +10,7 @@ import numpy as np
 import os
 import random
 import torch
+from sklearn.metrics import accuracy_score
 
 random_seed = 42
 # torch.manual_seed(random_seed)
@@ -84,6 +85,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	samples_per_class = num_samples // num_classes
 	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
 	not_sample = 0
+	total_var = np.sum(y_var)
 	for label in range(num_classes):
 		# X_input_ids, X_token_type_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['token_type_ids'])[y == label], np.array(X['attention_mask'])[y == label]
 		X_input_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['attention_mask'])[y == label]
@@ -92,7 +94,10 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		if "mask_pos" in X.features:
 			X_mask_pos = np.array(X['mask_pos'])[y == label]
 		y_ = y[y==label]
-		y_var_ = y_var[y == label]	
+		y_var_ = y_var[y == label]
+		print('분산 평균 : ', np.mean(y_var_))
+		regular_var = np.mean(y_var_) / total_var
+		print('분산 정규화 : ', regular_var)
 
 		# p = y_mean[y == label]
 		#2024.01.19 주석 처리
