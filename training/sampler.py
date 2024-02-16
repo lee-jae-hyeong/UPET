@@ -92,9 +92,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		if "mask_pos" in X.features:
 			X_mask_pos = np.array(X['mask_pos'])[y == label]
 		y_ = y[y==label]
-		y_var_ = y_var[y == label]
-
-        	true_label_ = true_label[y==label]	
+		y_var_ = y_var[y == label]	
 
 		# p = y_mean[y == label]
 		#2024.01.19 주석 처리
@@ -117,7 +115,12 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			not_sample += 1
 			continue
 		indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
-		print(accuracy_score(true_label_[indices], y_[indices]))
+
+		if not true_label is None:
+			true_label_ = true_label[y==label]
+			print('정확도 : ', accuracy_score(true_label_[indices], y_[indices]))
+			print('실제 : ', true_label_[indices], y_[indices])
+			print('수도 레이블 : ', y_[indices])
 		# add by ljh
 		if len(set(indices)) != samples_per_class:
 			print("samples_per_class : {}".format(samples_per_class))
