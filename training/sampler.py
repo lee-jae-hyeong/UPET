@@ -57,7 +57,7 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
@@ -92,13 +92,17 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		if "mask_pos" in X.features:
 			X_mask_pos = np.array(X['mask_pos'])[y == label]
 		y_ = y[y==label]
-		y_var_ = y_var[y == label]		
+		y_var_ = y_var[y == label]
+
+        	true_label_ = true_label[y==label]	
+
 		# p = y_mean[y == label]
 		#2024.01.19 주석 처리
 		#p_norm = BALD_acq[y==label]
 		p_norm = res_score[y==label]
 		p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
 		p_norm = p_norm/np.sum(p_norm)
+		
 		if len(X_input_ids) < samples_per_class:
 			logger.info ("Sampling with replacement.")
 			replace = True
@@ -113,6 +117,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			not_sample += 1
 			continue
 		indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
+		print(accuracy_score(true_label_[indices], y_[indices]))
 		# add by ljh
 		if len(set(indices)) != samples_per_class:
 			print("samples_per_class : {}".format(samples_per_class))
