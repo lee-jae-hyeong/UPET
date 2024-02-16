@@ -95,7 +95,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		y_ = y[y==label]
 		y_var_ = y_var[y == label]
 		print('분산 평균 : ', np.mean(y_var_))
-		regular_var = np.sum(y_var_) / total_var
+		regular_var = 1 - (np.sum(y_var_) / total_var)
 		print('분산 정규화 : ', regular_var, '샘플링 수 :', round(num_samples*regular_var))
 
 		# p = y_mean[y == label]
