@@ -82,12 +82,13 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	logger.info (f'res_score: {res_score}')
 
 	samples_per_class = num_samples // num_classes
+	
+	for label in range(num_classes):
+        	total_var += np.mean(y_var[y==label])
+		
 	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
 	not_sample = 0
 	total_var = 0
-
-	for label in range(num_classes):
-        	total_var += np.mean(y_var[y==label])
 
 	
 	for label in range(num_classes):
