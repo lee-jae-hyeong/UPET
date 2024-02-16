@@ -102,6 +102,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		#2024.01.19 주석 처리
 		#p_norm = BALD_acq[y==label]
 		p_norm = res_score[y==label]
+		print("res 평균 : ", np.mean(p_norm))
 		p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
 		p_norm = p_norm/np.sum(p_norm)
 		
