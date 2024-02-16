@@ -307,7 +307,7 @@ class TeacherTrainer(BaseTrainer):
         
         assert y_var.shape == (unlabeled_data_num, num_classes)
 
-        return unlabeled_dataset, y_mean, y_var, y_pred, y_T
+        return unlabeled_dataset, y_mean, y_var, y_pred, y_T, label
         # #compute variance
         # y_var = np.var(y_T, axis=0)
         # assert y_var.shape == (unlabeled_data_num, num_classes)
@@ -719,7 +719,7 @@ class SelfTrainer(object):
             print("Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
             print("*"*72)
 
-            unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
+            unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
                 unlabeled_data_num=self.unlabeled_data_num,
                 T=20, 
@@ -743,7 +743,8 @@ class SelfTrainer(object):
                 num_classes=self.num_classes, 
                 y_T=y_T,
                 alpha=self.alpha,
-                cb_loss=self.cb_loss)
+                cb_loss=self.cb_loss,
+                true_label = true_label)
             
             #num_samples = int(num_samples * 1.2)
             #self.unlabeled_data_num = int(self.unlabeled_data_num * 1.1)
