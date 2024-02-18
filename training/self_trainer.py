@@ -308,7 +308,7 @@ class TeacherTrainer(BaseTrainer):
         
         assert y_var.shape == (unlabeled_data_num, num_classes)
 
-        return unlabeled_dataset, y_mean, y_var, y_pred, y_T, label
+        return unlabeled_dataset, y_mean, y_var, y_pred, y_T, np.array(label)
         # #compute variance
         # y_var = np.var(y_T, axis=0)
         # assert y_var.shape == (unlabeled_data_num, num_classes)
