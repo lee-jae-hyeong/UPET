@@ -87,8 +87,8 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 
 	samples_per_class = num_samples // num_classes
 	
-	for label in range(num_classes):
-        	total_var += np.mean(y_var[y==label])
+	# for label in range(num_classes):
+ #        	total_var += np.mean(y_var[y==label])
 		
 	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
 	not_sample = 0
@@ -105,8 +105,8 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		y_ = y[y==label]
 		y_var_ = y_var[y == label]
 		print('분산 평균 : ', np.mean(y_var_))
-		regular_var = 1 - (np.mean(y_var_) / total_var)
-		print('분산 정규화 : ', regular_var, '샘플링 수 :', round(num_samples*regular_var), num_samples*regular_var)
+		# regular_var = 1 - (np.mean(y_var_) / total_var)
+		# print('분산 정규화 : ', regular_var, '샘플링 수 :', round(num_samples*regular_var), num_samples*regular_var)
 
 		# p = y_mean[y == label]
 		#2024.01.19 주석 처리
@@ -134,7 +134,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		if not true_label is None:
 			true_label_ = true_label[y==label]
 			print('정확도 : ', accuracy_score(true_label_[indices], y_[indices]))
-			print('실제 : ', true_label_[indices], y_[indices])
+			print('실제 : ', true_label_[indices])
 			print('수도 레이블 : ', y_[indices])
 		# add by ljh
 		if len(set(indices)) != samples_per_class:
