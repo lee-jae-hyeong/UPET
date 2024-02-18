@@ -290,6 +290,9 @@ class GlueDataset():
             self.metric = load_metric("accuracy")
         elif data_args.dataset_name == "e_cate2":
             self.metric = load_metric("accuracy")
+
+        elif data_args.dataset_name == "e_cate3":
+            self.metric = load_metric("accuracy")
         else:
             self.metric = load_metric("./metrics/glue", data_args.dataset_name)
         #self.metric = load_metric("./metrics/glue", data_args.dataset_name)
