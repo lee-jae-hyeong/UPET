@@ -67,6 +67,9 @@ def get_trainer(args):
     elif data_args.dataset_name == 'e_cate2':
         path = "/content/drive/MyDrive/UPET/e_cate2"
 
+    elif data_args.dataset_name == 'e_cate3':
+        path = "/content/drive/MyDrive/UPET/e_cate3"
+
     # if data_args.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top", "e_cate2"]:
         
     #     raw_datasets = load_from_disk(path)
