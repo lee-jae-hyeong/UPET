@@ -61,7 +61,7 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = False):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
@@ -121,10 +121,22 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		print("res 평균 : ", np.mean(p_norm))
 
 		if active_learning:
-			sorted_indices = np.argsort(p_norm)
-			indices = sorted_indices[:active_number]
+			if uncert:
+				print('ACRIVE_LEARNING_UNCERTAINTY_BASED')
+				sorted_indices = np.argsort(p_norm)
+				indices = sorted_indices[:active_number]
+				true_label_ = true_label[y==label]
+				y_[indices] = true_label_[indices]
+
+			else:
+				print('ACRIVE_LEARNING_RANDOM_BASED')
+				indices = np.random.choice(len(X_input_ids), active_number, replace=False)
+				true_label_ = true_label[y==label]
+				y_[indices] = true_label_[indices]
+
 
 		else :
+			print('SELF_TRAINING')
 			p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
 			p_norm = p_norm/np.sum(p_norm)
 			
