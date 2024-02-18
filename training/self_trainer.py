@@ -293,6 +293,7 @@ class TeacherTrainer(BaseTrainer):
 
         print(y_pred)
         print(label)
+        label = [tensor.item() for tensor in label]
         matching_indices = [index for index, (item1, item2) in enumerate(zip(y_pred, label)) if item1 == item2]
         
         print('정확도 : ', accuracy_score(label, y_pred))
