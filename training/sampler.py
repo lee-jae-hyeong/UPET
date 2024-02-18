@@ -73,7 +73,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	scf_index = np.argmax(y_mean, axis = 1)
 	scf = y_mean[np.arange(len(y_mean)), scf_index]
 	print(scf)
-	sct = (1 - BALD_acq)
+	sct = (BALD_acq)
 	print(sct)
 
 	
