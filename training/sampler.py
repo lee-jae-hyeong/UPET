@@ -61,7 +61,7 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
@@ -73,7 +73,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	scf_index = np.argmax(y_mean, axis = 1)
 	scf = y_mean[np.arange(len(y_mean)), scf_index]
 	print(scf)
-	sct = (1- BALD_acq)
+	sct = (BALD_acq)
 	print(sct)
 
 	
@@ -94,7 +94,9 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	not_sample = 0
 	total_var = 0
 
-	
+	total_res_score = np.sum(res_score)
+
+		
 	for label in range(num_classes):
 		# X_input_ids, X_token_type_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['token_type_ids'])[y == label], np.array(X['attention_mask'])[y == label]
 		X_input_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['attention_mask'])[y == label]
@@ -112,40 +114,50 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		#2024.01.19 주석 처리
 		#p_norm = BALD_acq[y==label]
 		p_norm = res_score[y==label]
-		print("res 평균 : ", np.mean(p_norm))
-		p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
-		p_norm = p_norm/np.sum(p_norm)
-		
-		if len(X_input_ids) < samples_per_class:
-			logger.info ("Sampling with replacement.")
-			replace = True
-		else:
-			replace = False
-		# print("====== label: {} ======".format(label))
-		# print("len(X_input_ids)=", len(X_input_ids))
-		# print("samples_per_class=", samples_per_class)
-		# print("p_norm=", p_norm)
-		# print("replace=", replace)
-		if len(X_input_ids) == 0: # add by wjn
-			not_sample += 1
-			continue
-		indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
 
-		if not true_label is None:
-			true_label_ = true_label[y==label]
-			print('정확도 : ', accuracy_score(true_label_[indices], y_[indices]))
-			print('실제 : ', true_label_[indices])
-			print('수도 레이블 : ', y_[indices])
-		# add by ljh
-		if len(set(indices)) != samples_per_class:
-			print("samples_per_class : {}".format(samples_per_class))
-			print("sampling_count : {}".format(len(set(indices))))
+		ratio = np.sum(p_norm)/total_res_score
+		#print('res_count : ', np.sum(p_norm)/total_res_score, num_samples * ratio)
+		
+		print("res 평균 : ", np.mean(p_norm))
+
+		if active_learning:
+			sorted_indices = np.argsort(p_norm)
+			indices = sorted_indices[:active_number]
+
+		else :
+			p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
+			p_norm = p_norm/np.sum(p_norm)
 			
-			logger.info ("{}_Not Enough data ratio".format(len(set(indices)), samples_per_class)) 
-			print("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class))
-			if cb_loss:
-				# cb_loss 적용 시, 중복 제거
-				indices = np.array(list(set(indices)))
+			if len(X_input_ids) < samples_per_class:
+				logger.info ("Sampling with replacement.")
+				replace = True
+			else:
+				replace = False
+			# print("====== label: {} ======".format(label))
+			# print("len(X_input_ids)=", len(X_input_ids))
+			# print("samples_per_class=", samples_per_class)
+			# print("p_norm=", p_norm)
+			# print("replace=", replace)
+			if len(X_input_ids) == 0: # add by wjn
+				not_sample += 1
+				continue
+			indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
+	
+			if not true_label is None:
+				true_label_ = true_label[y==label]
+				print('정확도 : ', accuracy_score(true_label_[indices], y_[indices]))
+				print('실제 : ', true_label_[indices])
+				print('수도 레이블 : ', y_[indices])
+			# add by ljh
+			if len(set(indices)) != samples_per_class:
+				print("samples_per_class : {}".format(samples_per_class))
+				print("sampling_count : {}".format(len(set(indices))))
+				
+				logger.info ("{}_Not Enough data ratio".format(len(set(indices)), samples_per_class)) 
+				print("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class))
+				if cb_loss:
+					# cb_loss 적용 시, 중복 제거
+					indices = np.array(list(set(indices)))
 				
 			
 		X_s_input_ids.extend(X_input_ids[indices])
