@@ -316,6 +316,16 @@ class SemiSupervisedArguments:
         metadata={
         "help" : "cb_loss ratio"}
     )
+    active_leatning :  bool = field(
+        default=False,
+        metadata={
+        "help" : "Active_learning"}
+    )
+    active_number : Optional[int] = field(
+        default=16,
+        metadata={
+        "help" : "Active_learning per sample number"}
+    )
 
 
 @dataclass
