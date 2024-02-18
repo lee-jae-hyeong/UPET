@@ -29,8 +29,8 @@ def get_BALD_acquisition(y_T):
 	expected_p = np.mean(y_T, axis=0)
 	entropy_expected_p = - np.sum(expected_p * np.log(expected_p + 1e-10), axis=-1)
 	BALD_acq = (entropy_expected_p - expected_entropy)
-	# BALD_acq = np.where(BALD_acq < 0 , 1, BALD_acq)
-	# BALD_acq = np.log(BALD_acq)**2
+	BALD_acq = np.where(BALD_acq < 0 , 1, BALD_acq)
+	BALD_acq = np.log(BALD_acq)**2
 	# return (entropy_expected_p - expected_entropy)
 	return BALD_acq
 
