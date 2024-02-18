@@ -55,7 +55,8 @@ task_to_test_key = {
     "wnli": "accuracy",
     "ecommerce" : "accuracy",
     "ecommerce_cate" : "accuracy",
-    "e_cate2" : "accuracy"
+    "e_cate2" : "accuracy",
+    "e_cate3" : "accuracy"
 }
 
 task_to_keys = {
@@ -70,7 +71,8 @@ task_to_keys = {
     "wnli": ("sentence1", "sentence2"),
     "ecommerce" : ("sentence", None),
     "ecommerce_cate" : ("sentence" , None),
-    "e_cate2" : ("sentence", None)
+    "e_cate2" : ("sentence", None),
+    "e_cate3" : ("sentence", None)
 }
 
 task_to_template = {
@@ -148,6 +150,11 @@ class GlueDataset():
         elif data_args.dataset_name == "e_cate2":
             path = "/content/drive/MyDrive/UPET/e_cate2"
             raw_datasets = load_from_disk(path)
+
+        elif data_args.dataset_name == "e_cate3":
+            path = "/content/drive/MyDrive/UPET/e_cate3"
+            raw_datasets = load_from_disk(path)
+            
         else:
             raw_datasets = load_dataset("glue", data_args.dataset_name)
 
