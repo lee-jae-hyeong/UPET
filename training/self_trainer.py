@@ -739,12 +739,8 @@ class SelfTrainer(object):
     
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch  
-    
-                pseudo_labeled_dataset = pseudo_labeled_dataset.add_item(tmp_dataset)                
-                # 生成pseudo-labeled dataset
-                # pseudo_labeled_dataset = DatasetDict()
                 pseudo_labeled_dataset = DatasetK.from_dict(pseudo_labeled_examples)
-                
+
                 for i in range(len(pseudo_labeled_dataset)):
                     tmp_dataset=pseudo_labeled_dataset[i]
                     self.train_dataset = self.train_dataset.add_item(tmp_dataset)
@@ -765,7 +761,7 @@ class SelfTrainer(object):
                     num_train_epochs=self.student_training_epoch,
                     student_learning_rate=self.student_learning_rate,
                     pseudo_labeled_dataset=self.train_dataset,
-                    output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter))
+                    output_dir=os.path.join(self.output_dir, "iteration", "active_student_iter_{}".format(iter))
                 )
                 student_trainer.train()
                 load_model(student_model, os.path.join(student_trainer.state.best_model_checkpoint, "model.safetensors"))
@@ -783,7 +779,7 @@ class SelfTrainer(object):
                 teacher_trainer: TeacherTrainer = self.get_teacher_trainer(
                     base_model=student_model, 
                     num_train_epochs=self.teacher_tuning_epoch, 
-                    output_dir=os.path.join(self.output_dir, "iteration", "teacher_iter_{}".format(iter))
+                    output_dir=os.path.join(self.output_dir, "iteration", "active_teacher_iter_{}".format(iter))
                 )
     
     
