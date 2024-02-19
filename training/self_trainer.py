@@ -758,7 +758,7 @@ class SelfTrainer(object):
     
                 student_trainer: RobustTrainer = self.get_student_trainer(
                     base_model=student_model, 
-                    num_train_epochs=self.student_training_epoch,
+                    num_train_epochs=self.teacher_training_epoch,
                     student_learning_rate=self.student_learning_rate,
                     pseudo_labeled_dataset=self.train_dataset,
                     output_dir=os.path.join(self.output_dir, "iteration", "active_student_iter_{}".format(iter))
