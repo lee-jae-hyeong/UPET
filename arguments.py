@@ -316,7 +316,7 @@ class SemiSupervisedArguments:
         metadata={
         "help" : "cb_loss ratio"}
     )
-    active_leatning :  bool = field(
+    active_learning :  bool = field(
         default=False,
         metadata={
         "help" : "Active_learning"}
