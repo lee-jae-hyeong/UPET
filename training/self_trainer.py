@@ -498,62 +498,6 @@ class SelfTrainer(object):
             accuracy = accuracy_score(predict_dataset['label'], predicted_labels)
             f.write(f"accuracy_score: {accuracy}\n")
 
-    # def predict_data(self, trainer, predict_dataset=None):
-    #     if predict_dataset is None:
-    #         logger.info("No dataset is available for testing")
-
-    #     elif isinstance(predict_dataset, dict):
-    #         predicted_labels = {}
-    #         for dataset_name, d in predict_dataset.items():
-    #             logger.info("*** Predict: %s ***" % dataset_name)
-    #             predictions, labels, metrics = trainer.predict(d, metric_key_prefix="predict")
-    #             predictions = np.argmax(predictions, axis=2)
-
-    #             predicted_labels = predictions.tolist()
-
-    #             trainer.log_metrics("predict", metrics)
-    #             trainer.save_metrics("predict", metrics)
-
-
-    #     else:
-    #         logger.info("*** Predict ***")
-    #         predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
-    #         #predictions = np.argmax(predictions, axis=2)
-    #         predictions = np.argmax(predictions, axis=1)
-
-
-    #         predicted_labels = predictions.tolist()
-
-    #         trainer.log_metrics("predict", metrics)
-    #         trainer.save_metrics("predict", metrics)
-
-            
-    #     f1_score_macro=f1_score(predict_dataset['label'], predicted_labels, average="macro")
-    #     recall_macro=recall_score(predict_dataset['label'], predicted_labels, average="macro")
-    #     precision_macro=precision_score(predict_dataset['label'], predicted_labels, average="macro")
-        
-    #     print("{}_f1_score_macro".format(f1_score_macro))
-    #     print("{}_recall_score_macro".format(recall_macro))
-    #     print("{}_precision_score_macro".format(precision_macro))
-
-    #     f1_score_micro=f1_score(predict_dataset['label'], predicted_labels, average="micro")
-    #     recall_micro=recall_score(predict_dataset['label'], predicted_labels, average="micro")
-    #     precision_micro=precision_score(predict_dataset['label'], predicted_labels, average="micro")
-        
-    #     print("{}_f1_score_micro".format(f1_score_macro))
-    #     print("{}_recall_micro".format(recall_macro))
-    #     print("{}_precision_micro".format(precision_macro))
-
-    #     f1_score_weighted=f1_score(predict_dataset['label'], predicted_labels, average="weighted")
-    #     recall_weighted=recall_score(predict_dataset['label'], predicted_labels, average="weighted")
-    #     precision_weighted=precision_score(predict_dataset['label'], predicted_labels, average="weighted")
-        
-    #     print("{}_f1_score_weighted".format(f1_score_macro))
-    #     print("{}_recall_weighted".format(recall_macro))
-    #     print("{}_precision_weighted".format(precision_macro))
-
-    #     accuracy=accuracy_score(predict_dataset['label'], predicted_labels)
-    #     print("{}_accuracy_score".format(accuracy))
     
     def get_student_trainer(
         self, 
@@ -789,7 +733,7 @@ class SelfTrainer(object):
                 logger.info("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
                 logger.info("The best teacher model testing result is {}.".format(best_test_metric))
                 print("********** Finishing Active-learning **********")
-                print("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
+                print("The best teacher model at {}-th Active-learning iteration.".format(best_self_training_iteration))
                 print("The best teacher model testing result is {}.".format(best_test_metric))
 
             
@@ -872,11 +816,11 @@ class SelfTrainer(object):
             #print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
 
-            if self.cb_loss:
-                logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
-                logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
-                class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
-                class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
+            # if self.cb_loss:
+            #     logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
+            #     logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
+            #     class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
+            #     class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
                 
   
             # add by ljh(copy UST)
@@ -886,8 +830,8 @@ class SelfTrainer(object):
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
                 pseudo_labeled_examples["weight"] = X_conf
-                if self.cb_loss:
-                    pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
+                # if self.cb_loss:
+                #     pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
                 
             else:
                 pseudo_labeled_examples = X_batch
@@ -903,7 +847,7 @@ class SelfTrainer(object):
                 if self.semi_training_args.confidence:
                     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
                     tmp_dataset["weight"] = labeled_data_conf
-                    tmp_dataset["class_weights"] = class_weights
+                    # tmp_dataset["class_weights"] = class_weights
                     
                 # if not self.semi_training_args.confidence:
                 #     tmp_dataset["weight"] = 1.0
@@ -1023,12 +967,12 @@ class SelfTrainer(object):
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
 
 
-            if self.cb_loss:
-                logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
-                logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
+            # if self.cb_loss:
+            #     logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
+            #     logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
                 
-                class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
-                class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
+            #     class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
+            #     class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
             
             if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
@@ -1036,7 +980,7 @@ class SelfTrainer(object):
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
                 pseudo_labeled_examples["weight"] = X_conf
-                pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
+                #pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
             else:
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch               
@@ -1051,7 +995,7 @@ class SelfTrainer(object):
                 if self.semi_training_args.confidence:
                     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
                     tmp_dataset["weight"] = labeled_data_conf
-                    tmp_dataset["class_weights"] = class_weights
+                    # tmp_dataset["class_weights"] = class_weights
                     
                 # if not self.semi_training_args.confidence:
                 #     tmp_dataset["weight"] = 1.0
