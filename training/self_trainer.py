@@ -430,7 +430,7 @@ class SelfTrainer(object):
             test_key=self.test_key,
             dataset_name=self.dataset_name,
             class_weights=class_weights,
-            callbacks = [EarlyStoppingCallback(early_stopping_patience=15)]
+            callbacks = [EarlyStoppingCallback(early_stopping_patience=10)]
         )
         return teacher_trainer
     def predict_data(self, trainer, predict_dataset=None, log_file_path=None):
@@ -580,7 +580,7 @@ class SelfTrainer(object):
             data_collator=self.student_data_collator,
             test_key=self.test_key,
             class_weights=class_weights,
-            callbacks = [EarlyStoppingCallback(early_stopping_patience=15)]
+            callbacks = [EarlyStoppingCallback(early_stopping_patience=10)]
         )
         return student_trainer
 
