@@ -816,7 +816,157 @@ class SelfTrainer(object):
 
             
         for iter in range(self.self_training_epoch):
+            if self.active_learning : 
+        
+                logger.info("*"*34)
+                logger.info("* Active-learning {}-th iteration *".format(iter))
+                logger.info("*"*34)
+                print("*"*34)
+                print("* Active-learning {}-th iteration *".format(iter))
+                print("*"*34)
+    
+    
+                # 获得Teacher模型在测试集上的效果
+                if iter > 0:
+                    teacher_trainer.model = teacher_model
+                    metrics = teacher_trainer.evaluate()
+                    # print("metrics=", metrics)
+                
+                '''
+                e.g., {'eval_loss': 0.6926815509796143, 'eval_accuracy': 0.5234657039711191, 'eval_runtime': 0.7267, 'eval_samples_per_second': 381.161, 'eval_steps_per_second': 48.161, 'epoch': 1.0}
+                '''
+                logger.info("*"*60)
+                logger.info("* The testing result of teacher model is {} result: {} *".format(self.test_key, metrics["eval_{}".format(self.test_key)]))
+                logger.info("*"*60)
+                print("*"*60)
+                print("* The testing result of teacher model is {} result: {} *".format(self.test_key, metrics["eval_{}".format(self.test_key)]))
+                print("*"*60)
+    
+                if best_test_metric is None or best_test_metric < metrics["eval_{}".format(self.test_key)]:
+                    best_test_metric = metrics["eval_{}".format(self.test_key)]
+                    best_self_training_iteration = iter
+                    best_teacher_model = teacher_model
+                    logger.info("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
+                    logger.info("The best teacher model testing result is {}.".format(best_test_metric))
+                    print("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
+                    print("The best teacher model testing result is {}.".format(best_test_metric))
+    
+    
+                # # Teacher模型在labeled data上进行parameter-efficient tuning
+                # if iter > 0:
+                #     logger.info("*"*80)
+                #     logger.info("* Tuning the teacher model on labeled data at {}-th self-training iteration. *".format(iter))
+                #     logger.info("*"*80)
+                #     print("*"*80)
+                #     print("* Tuning the teacher model on labeled data at {}-th self-training iteration. *".format(iter))
+                #     print("*"*80)
+    
+                #     teacher_model = self.freeze_backbone(teacher_model, use_pe=True)
+                #     # teacher_trainer: TeacherTrainer = self.get_teacher_trainer(base_model=teacher_model, num_train_epochs=self.teacher_tuning_epoch)
+                #     teacher_trainer.train()
+                #     teacher_model.load_state_dict(torch.load(os.path.join(teacher_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
+                #     teacher_trainer.model = teacher_model
+                
+                # Teacher模型在unlabeled data上获取pseudo-labeled data，并根据uncertainty estimation进行采样
+                logger.info("*"*72)
+                logger.info("Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
+                logger.info("*"*72)
+                print("*"*72)
+                print("Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
+                print("*"*72)
+    
+                unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
+                    unlabeled_dataset=self.unlabeled_dataset, 
+                    unlabeled_data_num=self.unlabeled_data_num,
+                    T=20, 
+                    num_classes=self.num_classes
+                    )
+                
+                logger.info("*"*42)
+                logger.info("* Sampling reliable pseudo-labeled data. *")
+                logger.info("*"*42)
+                print("*"*42)
+                print("* Sampling reliable pseudo-labeled data. *")
+                print("*"*42)
+                
+                X_batch, y_batch, w_batch = sample_by_bald_class_easiness(
+                    tokenizer=self.tokenizer, 
+                    X=unlabeled_dataset, 
+                    y_mean=y_mean, 
+                    y_var=y_var, 
+                    y=y_pred, 
+                    num_samples=int(y_pred.shape[0] * self.pseudo_sample_num_or_ratio) if self.pseudo_sample_num_or_ratio <= 1.0 else int(self.pseudo_sample_num_or_ratio), 
+                    num_classes=self.num_classes, 
+                    y_T=y_T,
+                    alpha=self.alpha,
+                    cb_loss=self.cb_loss,
+                    true_label = true_label,
+                    active_learning = self.active_learning,
+                    active_number = self.active_number,
+                    uncert = True)
+    
+                print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
+    
+                pseudo_labeled_examples = X_batch
+                pseudo_labeled_examples["label"] = y_batch  
+    
+                pseudo_labeled_dataset = pseudo_labeled_dataset.add_item(tmp_dataset)                
+                # 生成pseudo-labeled dataset
+                # pseudo_labeled_dataset = DatasetDict()
+                pseudo_labeled_dataset = DatasetK.from_dict(pseudo_labeled_examples)
+                
+                for i in range(len(pseudo_labeled_dataset)):
+                    tmp_dataset=pseudo_labeled_dataset[i]
+                    self.train_dataset = self.train_dataset.add_item(tmp_dataset)
+                    print(i,f"_번쨰_train_dataset_length : {}".format(len(self.train_dataset)))
+    
+                # 初始化一个新的Student模型，并让Student模型在pseudo-labeled data上进行鲁棒学习
+                logger.info("*"*56)
+                logger.info("* Training a new student model on active-labeled data. *")
+                logger.info("*"*56)
+                print("*"*56)
+                print("* Training a new student model on active-labeled data. *")
+                print("*"*56)
+                
+                student_model = teacher_model
+    
+                student_trainer: RobustTrainer = self.get_student_trainer(
+                    base_model=student_model, 
+                    num_train_epochs=self.student_training_epoch,
+                    student_learning_rate=self.student_learning_rate,
+                    pseudo_labeled_dataset=self.train_dataset,
+                    output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter))
+                )
+                student_trainer.train()
+                load_model(student_model, os.path.join(student_trainer.state.best_model_checkpoint, "model.safetensors"))
+                #student_model.load_state_dict(torch.load(os.path.join(student_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
+    
+                # 将Student模型参数赋给Teacher，作为下一轮训练的Teacher初始化
+                logger.info("*"*64)
+                logger.info("* Initializing a new teacher model from trained student model. *")
+                logger.info("*"*64)
+                print("*"*64)
+                print("* Initializing a new teacher model from trained student model. *")
+                print("*"*64)
+                teacher_model = student_model
+                # teacher_trainer = student_trainer
+                teacher_trainer: TeacherTrainer = self.get_teacher_trainer(
+                    base_model=student_model, 
+                    num_train_epochs=self.teacher_tuning_epoch, 
+                    output_dir=os.path.join(self.output_dir, "iteration", "teacher_iter_{}".format(iter))
+                )
+    
+    
+                
+            
+            logger.info("********** Finishing Active-learning **********")
+            logger.info("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
+            logger.info("The best teacher model testing result is {}.".format(best_test_metric))
+            print("********** Finishing Active-learning **********")
+            print("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
+            print("The best teacher model testing result is {}.".format(best_test_metric))
 
+            
             logger.info("*"*34)
             logger.info("* Self-training {}-th iteration *".format(iter))
             logger.info("*"*34)
