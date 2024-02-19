@@ -137,23 +137,40 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 
 		else :
 			print('SELF_TRAINING')
+			
 			p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
 			p_norm = p_norm/np.sum(p_norm)
-			
-			if len(X_input_ids) < samples_per_class:
+
+			# true_label_ = true_label[y==label]
+			# y_[indices] = true_label_[indices]
+			if len(X_input_ids) == 0: # add by wjn
+				not_sample += 1
+				continue
+				
+			if len(X_input_ids) < (samples_per_class * 2):
 				logger.info ("Sampling with replacement.")
 				replace = True
+				indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
+
 			else:
-				replace = False
+				sorted_indices = np.argsort(-p_norm)
+				indices = sorted_indices[:samples_per_class]
+				
+			
+			# if len(X_input_ids) < samples_per_class:
+			# 	logger.info ("Sampling with replacement.")
+			# 	replace = True
+			# else:
+			# 	replace = False
 			# print("====== label: {} ======".format(label))
 			# print("len(X_input_ids)=", len(X_input_ids))
 			# print("samples_per_class=", samples_per_class)
 			# print("p_norm=", p_norm)
 			# print("replace=", replace)
-			if len(X_input_ids) == 0: # add by wjn
-				not_sample += 1
-				continue
-			indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
+			# if len(X_input_ids) == 0: # add by wjn
+			# 	not_sample += 1
+			# 	continue
+			# indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
 	
 			if not true_label is None:
 				true_label_ = true_label[y==label]
@@ -167,9 +184,9 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 				
 				logger.info ("{}_Not Enough data ratio".format(len(set(indices)), samples_per_class)) 
 				print("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class))
-				if cb_loss:
-					# cb_loss 적용 시, 중복 제거
-					indices = np.array(list(set(indices)))
+				# if cb_loss:
+				# 	# cb_loss 적용 시, 중복 제거
+				# 	indices = np.array(list(set(indices)))
 				
 			
 		X_s_input_ids.extend(X_input_ids[indices])
