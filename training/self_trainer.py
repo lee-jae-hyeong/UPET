@@ -90,7 +90,7 @@ def get_class_balanced_loss_weight(samples_per_cls, no_of_classes, beta = 0.99):
 # add by wjn
 # revise by ljh
 def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16, least_num=10):
-    number = [2, 12, 22, 32, 42, 52, 62, 72, 82, 92, 102, 113, 150, 155]
+    number = [i for i in range(100)]
     
     np.random.choice(number)
 
