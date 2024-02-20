@@ -834,7 +834,7 @@ class SelfTrainer(object):
             
             if iter == 2:
                 print(iter, " 번째 self-training 변경 전 unlabeled_data_num : ", self.unlabeled_data_num)
-                self.unlabeled_data_num = self.unlabeled_data_num
+                self.unlabeled_data_num += self.unlabeled_data_num
                 print(iter, " 번째 self-training 변경 후 unlabeled_data_num : ", self.unlabeled_data_num)
 
             # if self.cb_loss:
@@ -956,7 +956,7 @@ class SelfTrainer(object):
 
             unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
-                unlabeled_data_num=80000
+                unlabeled_data_num=80000,
                 T=10, 
                 num_classes=self.num_classes
                 )
