@@ -688,7 +688,7 @@ class SelfTrainer(object):
                 for i in range(len(pseudo_labeled_dataset)):
                     tmp_dataset=pseudo_labeled_dataset[i]
                     self.train_dataset = self.train_dataset.add_item(tmp_dataset)
-                    print(i,f"_번쨰_train_dataset_length : {}".format(len(self.train_dataset)))
+                    print(i,"_번쨰_train_dataset_length : {}".format(len(self.train_dataset)))
     
                 # 初始化一个新的Student模型，并让Student模型在pseudo-labeled data上进行鲁棒学习
                 logger.info("*"*56)
