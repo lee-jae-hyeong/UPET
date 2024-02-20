@@ -805,7 +805,7 @@ class SelfTrainer(object):
             print("* Sampling reliable pseudo-labeled data. *")
             print("*"*42)
             
-            X_batch, y_batch, w_batch = sample_by_bald_class_easiness(
+            X_batch, y_batch, w_batch, _ = sample_by_bald_class_easiness(
                 tokenizer=self.tokenizer, 
                 X=unlabeled_dataset, 
                 y_mean=y_mean, 
@@ -962,7 +962,7 @@ class SelfTrainer(object):
             
             post_sample_num = int(self.num_classes * 500)
             
-            X_batch, y_batch, w_batch = sample_by_bald_class_easiness(
+            X_batch, y_batch, w_batch, _ = sample_by_bald_class_easiness(
                 tokenizer=self.tokenizer, 
                 X=unlabeled_dataset, 
                 y_mean=y_mean, 
