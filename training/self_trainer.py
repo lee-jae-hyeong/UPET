@@ -406,6 +406,7 @@ class SelfTrainer(object):
         self.use_prompt = self.semi_training_args.use_pe
         self.active_learning = self.semi_training_args.active_learning
         self.active_number = self.semi_training_args.active_number
+        self.uncert = self.semi_training_args.uncert
 
     def get_teacher_trainer(
         self, 
@@ -589,10 +590,10 @@ class SelfTrainer(object):
         print("*"*50)
 
         logger.info("*"*30)
-        logger.info("* Starting Self-training ... *")
+        logger.info("* Starting Active Self-training ... *")
         logger.info("*"*30)
         print("*"*30)
-        print("* Starting Self-training ... *")
+        print("* Starting Active Self-training ... *")
         print("*"*30)
 
         best_test_metric = None
@@ -603,7 +604,7 @@ class SelfTrainer(object):
 
         # 多轮Teacher-Student迭代训练
 
-            
+        plus_pseudo_sample_num = self.pseudo_sample_num_or_ratio
         for iter in range(self.self_training_epoch):
             if self.active_learning : 
         
@@ -643,16 +644,16 @@ class SelfTrainer(object):
                 
                 # Teacher模型在unlabeled data上获取pseudo-labeled data，并根据uncertainty estimation进行采样
                 logger.info("*"*72)
-                logger.info("Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
+                logger.info("Active_learning for Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
                 logger.info("*"*72)
                 print("*"*72)
-                print("Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
+                print("Active_learning for Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
                 print("*"*72)
     
                 unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                     unlabeled_dataset=self.unlabeled_dataset, 
                     unlabeled_data_num=self.unlabeled_data_num,
-                    T=20, 
+                    T=16, 
                     num_classes=self.num_classes
                     )
                 
@@ -677,9 +678,9 @@ class SelfTrainer(object):
                     true_label = true_label,
                     active_learning = self.active_learning,
                     active_number = self.active_number,
-                    uncert = True)
+                    uncert = self.uncert)
     
-                print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
+                print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch)))
     
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch  
@@ -785,7 +786,7 @@ class SelfTrainer(object):
             unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
                 unlabeled_data_num=self.unlabeled_data_num,
-                T=20, 
+                T=16, 
                 num_classes=self.num_classes
                 )
             
@@ -809,12 +810,21 @@ class SelfTrainer(object):
                 cb_loss=self.cb_loss,
                 true_label = true_label)
 
-            
             #num_samples = int(num_samples * 1.2)
             #self.unlabeled_data_num = int(self.unlabeled_data_num * 1.1)
 
             #print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
+
+            
+            print(iter, " 번째 self-training 변경 전 pseudo_sample_num_or_ratio : ", self.pseudo_sample_num_or_ratio)
+            self.pseudo_sample_num_or_ratio += plus_pseudo_sample_num
+            print(iter, " 번째 self-training 변경 후 pseudo_sample_num_or_ratio : ", self.pseudo_sample_num_or_ratio)
+            
+            if iter == 2:
+                print(iter, " 번째 self-training 변경 전 unlabeled_data_num : ", self.unlabeled_data_num)
+                self.unlabeled_data_num = self.unlabeled_data_num
+                print(iter, " 번째 self-training 변경 후 unlabeled_data_num : ", self.unlabeled_data_num)
 
             # if self.cb_loss:
             #     logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
@@ -826,6 +836,7 @@ class SelfTrainer(object):
             # add by ljh(copy UST)
             if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
+                print("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
                 X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
@@ -909,10 +920,9 @@ class SelfTrainer(object):
                 num_train_epochs=self.teacher_tuning_epoch, 
                 output_dir=os.path.join(self.output_dir, "iteration", "teacher_iter_{}".format(iter))
             )
-
-
-            
         
+        self.predict_data(teacher_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics_last"))
+
         logger.info("********** Finishing Self-training **********")
         logger.info("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
         logger.info("The best teacher model testing result is {}.".format(best_test_metric))
@@ -933,14 +943,14 @@ class SelfTrainer(object):
                 output_dir=os.path.join(self.output_dir, "teacher_iter_post")
             )
 
-            unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
+            unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
-                unlabeled_data_num=self.unlabeled_data_num,
-                T=5, 
+                unlabeled_data_num=80000
+                T=10, 
                 num_classes=self.num_classes
                 )
             
-            post_sample_num = int(y_pred.shape[0] * 0.5)
+            post_sample_num = int(self.num_classes * 500)
             
             X_batch, y_batch, w_batch = sample_by_bald_class_easiness(
                 tokenizer=self.tokenizer, 
@@ -949,10 +959,11 @@ class SelfTrainer(object):
                 y_var=y_var, 
                 y=y_pred, 
                 num_samples=post_sample_num, 
-                num_classes=55000, 
+                num_classes=self.num_classes, 
                 y_T=y_T,
                 alpha=self.alpha,
-                cb_loss=self.cb_loss)
+                cb_loss=self.cb_loss,
+                true_label = true_label)
             
             # add by ljh(copy UST)
             # if self.semi_training_args.confidence:
