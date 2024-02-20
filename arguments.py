@@ -327,12 +327,12 @@ class SemiSupervisedArguments:
         "help" : "Active_learning per sample number"}
     )
 
-    uncert :  bool = field(
+    uncert :  bool = field(
         default=True,
         metadata={
         "help" : "Uncertainty_check"})
 
-    up_scale :  bool = field(
+    up_scale :  bool = field(
         default=True,
         metadata={
         "help" : "Uncertainty_up_scale_check"})
