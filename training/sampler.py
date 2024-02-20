@@ -31,7 +31,7 @@ def get_BALD_acquisition(y_T, up_scale = False):
 	# np.log(bald) ** 2
 	else:
 		BALD_acq = np.where(BALD_acq < 0 , 1, BALD_acq)
-		BALD_acq = np.log(BALD_acq)**2
+		BALD_acq = np.log(BALD_acq + 1e-10)**2
 
 		return BALD_acq
 
