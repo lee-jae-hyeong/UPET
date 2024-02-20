@@ -23,16 +23,24 @@ random_seed = 42
 
 logger = logging.getLogger('UST_RES')
 
-def get_BALD_acquisition(y_T):
+def get_BALD_acquisition(y_T, up_scale = False):
 
 	expected_entropy = - np.mean(np.sum(y_T * np.log(y_T + 1e-10), axis=-1), axis=0) 
 	expected_p = np.mean(y_T, axis=0)
 	entropy_expected_p = - np.sum(expected_p * np.log(expected_p + 1e-10), axis=-1)
 	BALD_acq = (entropy_expected_p - expected_entropy)
-	BALD_acq = np.where(BALD_acq < 0 , 1, BALD_acq)
-	BALD_acq = np.log(BALD_acq)**2
-	# return (entropy_expected_p - expected_entropy)
-	return BALD_acq
+
+	# BALD SCORE의 원본 버전
+	if up_scale:
+		return BALD_acq
+	# BALD SCORE의 새로운 버전
+	# BALD SCORE의 경우, 차이가 매우 작기 때문에 정규화를 거치고 나면 상대적으로 BALD의 차이가 가지는 의미가 퇴색됨. 그러므로, BALD Score를 확실하게 하기 위하여 up_scale을 진행.
+	# np.log(bald) ** 2
+	else:
+		BALD_acq = np.where(BALD_acq < 0 , 1, BALD_acq)
+		BALD_acq = np.log(BALD_acq)**2
+
+		return BALD_acq
 
 def sample_by_bald_difficulty(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T):
 
@@ -61,41 +69,40 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = False):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = False, res=True):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
 	logger.info ("Sampling by easy BALD acquisition function per class")
-	BALD_acq = get_BALD_acquisition(y_T)
-	#BALD_acq = (1. - BALD_acq)/np.sum(1. - BALD_acq)
+	
+	if res:
+		print('uncert = True 따른 BALD 업스케일링 진행')
+		BALD_acq = get_BALD_acquisition(y_T, up_scale = True)
+		sct = (BALD_acq)
+	else:
+		print('uncert = False 따른 BALD 업스케일링 진행하지 않음.')
+		BALD_acq = get_BALD_acquisition(y_T, up_scale = False)
+		BALD_acq = (1. - BALD_acq)/np.sum(1. - BALD_acq)
 	# 2024.01.19 reliable examples sampling 코드 구현 미비로 인해 추가
 	# add by ljh
+	# y_mean의 가장 확률적으로 높은 값이 레이블로 할당되기 때문에, confidence 측정을 위해 추출
 	scf_index = np.argmax(y_mean, axis = 1)
 	scf = y_mean[np.arange(len(y_mean)), scf_index]
-	print(scf)
-	sct = (BALD_acq)
-	print(sct)
 
-	
-	array_BALD_acq = np.array(BALD_acq)
-	np.savetxt('/content/array.txt', array_BALD_acq)
+	#res_score 정규화
+	#res_score : confidence와 certainty를 조합하여 신뢰도에 대한 점수(alpha를 통해 조절)
 	res_score = ((alpha * scf) + ((1-alpha) * sct)) / (np.sum(alpha * scf) + np.sum((1 - alpha) * sct))
 	
-	BALD_acq = (1. - BALD_acq)/np.sum(1. - BALD_acq)
 	logger.info (BALD_acq)
 	logger.info (f'res_score: {res_score}')
 
 	samples_per_class = num_samples // num_classes
 	
-	# for label in range(num_classes):
- #        	total_var += np.mean(y_var[y==label])
-		
 	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
 	not_sample = 0
-	total_var = 0
+
 
 	total_res_score = np.sum(res_score)
-
 		
 	for label in range(num_classes):
 		# X_input_ids, X_token_type_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['token_type_ids'])[y == label], np.array(X['attention_mask'])[y == label]
@@ -104,20 +111,17 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			X_token_type_ids = np.array(X['token_type_ids'])[y == label]
 		if "mask_pos" in X.features:
 			X_mask_pos = np.array(X['mask_pos'])[y == label]
+			
 		y_ = y[y==label]
 		y_var_ = y_var[y == label]
 		print('분산 평균 : ', np.mean(y_var_))
-		# regular_var = 1 - (np.mean(y_var_) / total_var)
-		# print('분산 정규화 : ', regular_var, '샘플링 수 :', round(num_samples*regular_var), num_samples*regular_var)
 
 		# p = y_mean[y == label]
 		#2024.01.19 주석 처리
 		#p_norm = BALD_acq[y==label]
 		p_norm = res_score[y==label]
 
-		ratio = np.sum(p_norm)/total_res_score
 		#print('res_count : ', np.sum(p_norm)/total_res_score, num_samples * ratio)
-		
 		print("res 평균 : ", np.mean(p_norm))
 
 		if active_learning:
@@ -146,12 +150,15 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			if len(X_input_ids) == 0: # add by wjn
 				not_sample += 1
 				continue
-				
+
+			# UST, UPET는 Active Learning이 없기 때문에, 다양성을 위해 확률적 샘플링을 진행하지만, UAST는 ST이전에 AL을 진행하기 때문에 다양성을 확보할 수 있음.
+			# self_training sample_selection 1번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이하인 경우엔, 모수가 충분치 않다고 판단 / 확률적 랜덤 샘플링 진행 
 			if len(X_input_ids) < (samples_per_class * 2):
 				logger.info ("Sampling with replacement.")
 				replace = True
 				indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
-
+				
+			# self_training sample_selection 2번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이상인 경우엔, 모수가 충분하다고 판단 / 상위 N개를 추출
 			else:
 				sorted_indices = np.argsort(-p_norm)
 				indices = sorted_indices[:samples_per_class]
@@ -171,13 +178,16 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			# 	not_sample += 1
 			# 	continue
 			# indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
-	
+
+			# 실제 노이즈가 얼마나 이루어지는지 체크하기 위함. 학습에 관여 x
 			if not true_label is None:
 				true_label_ = true_label[y==label]
-				print('정확도 : ', accuracy_score(true_label_[indices], y_[indices]))
-				print('실제 : ', true_label_[indices])
-				print('수도 레이블 : ', y_[indices])
+				print(label,' 의 정확도 : ', ,accuracy_score(true_label_[indices], y_[indices]))
+				# print('실제 : ', true_label_[indices])
+				# print('수도 레이블 : ', y_[indices])
+			
 			# add by ljh
+			# 샘플링 했을 때, 얼마나 부족한지 체크
 			if len(set(indices)) != samples_per_class:
 				print("samples_per_class : {}".format(samples_per_class))
 				print("sampling_count : {}".format(len(set(indices))))
