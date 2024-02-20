@@ -178,7 +178,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			# 실제 노이즈가 얼마나 이루어지는지 체크하기 위함. 학습에 관여 x
 			if not true_label is None:
 				true_label_ = true_label[y==label]
-				print(label,' 의 정확도 : ', ,accuracy_score(true_label_[indices], y_[indices]))
+				print(label,' 의 정확도 : ',accuracy_score(true_label_[indices], y_[indices]))
 				# print('실제 : ', true_label_[indices])
 				# print('수도 레이블 : ', y_[indices])
 			
