@@ -1025,8 +1025,17 @@ class SelfTrainer(object):
             print("* Training a new student model on pseudo-labeled data. *")
             print("*"*56)
             
-            student_model = self.student_base_model
-            student_model = self.freeze_backbone(student_model, use_pe=True)
+            if self.use_prompt:
+                print("USE_PROMPT AND STUDENT_MODEL INITIALIZE")
+                student_model = self.student_base_model
+                student_model = self.freeze_backbone(student_model, use_pe=True)
+
+            else:
+                # if iter == 0:
+                print("NOT_USE_PROMPT AND STUDENT_MODEL INITIALIZE : {} ITERATION".format(iter))
+                student_model = teacher_model
+                    # student_model = self.student_base_model
+                    # student_model = self.freeze_backbone(student_model, use_pe=False)
 
             student_trainer: RobustTrainer = self.get_student_trainer(
                 base_model=student_model, 
