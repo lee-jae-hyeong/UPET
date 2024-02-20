@@ -62,13 +62,13 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = False, res=True):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = False):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
 	logger.info ("Sampling by easy BALD acquisition function per class")
 	
-	if res:
+	if uncert:
 		print('uncert = True 따른 BALD 업스케일링 진행')
 		BALD_acq = get_BALD_acquisition(y_T, up_scale = True)
 		sct = (BALD_acq)
