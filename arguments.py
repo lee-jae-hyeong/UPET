@@ -332,6 +332,11 @@ class SemiSupervisedArguments:
         metadata={
         "help" : "Uncertainty_check"})
 
+    up_scale :  bool = field(
+        default=True,
+        metadata={
+        "help" : "Uncertainty_up_scale_check"})
+
 
 @dataclass
 class QuestionAnwseringArguments:
