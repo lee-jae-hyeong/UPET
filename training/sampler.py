@@ -62,18 +62,18 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = False):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = True, up_scale= True):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
 	logger.info ("Sampling by easy BALD acquisition function per class")
 	
-	if uncert:
-		print('uncert = True 따른 BALD 업스케일링 진행')
+	if up_scale:
+		print('up_scale = True 따른 BALD 업스케일링 진행')
 		BALD_acq = get_BALD_acquisition(y_T, up_scale = True)
 		sct = (BALD_acq)
 	else:
-		print('uncert = False 따른 BALD 업스케일링 진행하지 않음.')
+		print('up_scale = False 따른 BALD 업스케일링 진행하지 않음.')
 		BALD_acq = get_BALD_acquisition(y_T, up_scale = False)
 		BALD_acq = (1. - BALD_acq)/np.sum(1. - BALD_acq)
 	# 2024.01.19 reliable examples sampling 코드 구현 미비로 인해 추가
