@@ -327,6 +327,11 @@ class SemiSupervisedArguments:
         "help" : "Active_learning per sample number"}
     )
 
+    uncert :  bool = field(
+        default=True,
+        metadata={
+        "help" : "Uncertainty_check"})
+
 
 @dataclass
 class QuestionAnwseringArguments:
