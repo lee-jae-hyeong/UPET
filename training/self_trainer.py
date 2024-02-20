@@ -407,6 +407,7 @@ class SelfTrainer(object):
         self.active_learning = self.semi_training_args.active_learning
         self.active_number = self.semi_training_args.active_number
         self.uncert = self.semi_training_args.uncert
+        self.up_scale = self.semi_training_args.up_scale
 
     def get_teacher_trainer(
         self, 
@@ -678,7 +679,8 @@ class SelfTrainer(object):
                     true_label = true_label,
                     active_learning = self.active_learning,
                     active_number = self.active_number,
-                    uncert = self.uncert)
+                    uncert = self.uncert,
+                    up_scale = self.up_scale)
     
                 print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch)))
     
@@ -808,7 +810,9 @@ class SelfTrainer(object):
                 y_T=y_T,
                 alpha=self.alpha,
                 cb_loss=self.cb_loss,
-                true_label = true_label)
+                true_label = true_label,
+                uncert = self.uncert,
+                up_scale = self.up_scale)
 
             #num_samples = int(num_samples * 1.2)
             #self.unlabeled_data_num = int(self.unlabeled_data_num * 1.1)
@@ -963,7 +967,9 @@ class SelfTrainer(object):
                 y_T=y_T,
                 alpha=self.alpha,
                 cb_loss=self.cb_loss,
-                true_label = true_label)
+                true_label = true_label,
+                uncert = self.uncert,
+                up_scale = self.up_scale)
             
             # add by ljh(copy UST)
             # if self.semi_training_args.confidence:
