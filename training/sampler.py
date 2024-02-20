@@ -75,7 +75,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	else:
 		print('up_scale = False 따른 BALD 업스케일링 진행하지 않음.')
 		BALD_acq = get_BALD_acquisition(y_T, up_scale = False)
-		BALD_acq = (1. - BALD_acq)/np.sum(1. - BALD_acq)
+		sct = (1. - BALD_acq)
 	# 2024.01.19 reliable examples sampling 코드 구현 미비로 인해 추가
 	# add by ljh
 	# y_mean의 가장 확률적으로 높은 값이 레이블로 할당되기 때문에, confidence 측정을 위해 추출
