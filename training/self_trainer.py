@@ -682,6 +682,7 @@ class SelfTrainer(object):
                     uncert = self.uncert,
                     up_scale = self.up_scale)
 
+                # Active_learning을 통해 레이블링된 데이터는 언레이블링 데이터에서 제외 처리.
                 print('제외 전 언레이블 데이터 : ', len(self.unlabeled_dataset))
                 check_number = len(self.unlabeled_dataset)
                 self.unlabeled_dataset = self.unlabeled_dataset.filter(lambda example: example['idx'] not in X_idxs)
