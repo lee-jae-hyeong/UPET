@@ -681,7 +681,13 @@ class SelfTrainer(object):
                     active_number = self.active_number,
                     uncert = self.uncert,
                     up_scale = self.up_scale)
-    
+
+                print('제외 전 언레이블 데이터 : ', len(self.unlabeled_dataset))
+                check_number = len(self.unlabeled_dataset)
+                self.unlabeled_dataset = self.unlabeled_dataset.filter(lambda example: example['idx'] not in X_idxs)
+                print('제외 후 언레이블 데이터 : ', len(self.unlabeled_dataset))
+                print('차이 체크 : ', check_number - len(self.unlabeled_dataset), '정상 유무 : ', check_number - len(self.unlabeled_dataset) == self.active_number * self.num_classes)
+                
                 print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch)))
     
                 pseudo_labeled_examples = X_batch
