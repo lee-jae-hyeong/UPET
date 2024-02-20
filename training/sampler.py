@@ -91,7 +91,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 
 	samples_per_class = num_samples // num_classes
 	
-	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
+	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s, X_idxs = [], [], [], [], [], [], []
 	not_sample = 0
 
 
@@ -100,6 +100,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	for label in range(num_classes):
 		# X_input_ids, X_token_type_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['token_type_ids'])[y == label], np.array(X['attention_mask'])[y == label]
 		X_input_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['attention_mask'])[y == label]
+		X_idx = np.array(X['idx'])[y == label]
 		if "token_type_ids" in X.features:
 			X_token_type_ids = np.array(X['token_type_ids'])[y == label]
 		if "mask_pos" in X.features:
@@ -124,12 +125,14 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 				indices = sorted_indices[:active_number]
 				true_label_ = true_label[y==label]
 				y_[indices] = true_label_[indices]
+				X_idxs.extend(X_idx[indices])
 
 			else:
 				print('ACRIVE_LEARNING_RANDOM_BASED')
 				indices = np.random.choice(len(X_input_ids), active_number, replace=False)
 				true_label_ = true_label[y==label]
 				y_[indices] = true_label_[indices]
+				X_idxs.extend(X_idx[indices])
 
 
 		else :
@@ -223,7 +226,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		pseudo_labeled_input['token_type_ids'] = np.array(X_s_token_type_ids)
 	if "mask_pos" in X.features:
 		pseudo_labeled_input['mask_pos'] = np.array(X_s_mask_pos)
-	return pseudo_labeled_input, np.array(y_s), np.array(w_s)
+	return pseudo_labeled_input, np.array(y_s), np.array(w_s), X_ids
 
 
 def sample_by_bald_class_difficulty(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T):
