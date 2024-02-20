@@ -197,7 +197,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		if "mask_pos" in X.features:
 			X_s_mask_pos.extend(X_mask_pos[indices])
 		y_s.extend(y_[indices])
-		w_s.extend(y_var_[indices][:,0])
+		w_s.extend(y_var_[indices][:,label])
 
 	print("{}_SAMPLING_FAIL_COUNT".format(not_sample))
 	# X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s = shuffle(X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s)
