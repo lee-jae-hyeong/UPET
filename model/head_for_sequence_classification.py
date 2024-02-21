@@ -20,7 +20,7 @@ from model.model_adaptation import BertAdaModel, RobertaAdaModel, init_adapter
 from model.parameter_freeze import ParameterFreeze # add by wjn
 import copy, random
 
-random_seed = 42
+# random_seed = 42
 # torch.manual_seed(random_seed)
 # torch.cuda.manual_seed(random_seed)
 # torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
@@ -387,7 +387,7 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
                 if not weight is None:
-                  print(weight)
+                  print('가중치 존재')
                   loss_fct = CrossEntropyLoss(reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight)).mean()
@@ -608,7 +608,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
 
                 if not weight is None:
-                  # print(weight)
+                  print('가중치 존재 학습')
                   loss_fct = CrossEntropyLoss(reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight).clone().detach()).mean()
@@ -762,9 +762,9 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
                 
                 if not weight is None:
-                  # print(weight)
+                  print('가중치 존재 학습')
                   # print("class_weights_length : ", len(class_weights[0]))
-                  loss_fct = CrossEntropyLoss(weight = class_weights[0], reduction="none")
+                  loss_fct = CrossEntropyLoss(reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight).clone().detach()).mean()
 
@@ -909,9 +909,9 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
 
                 if not weight is None:
-                  # print(weight)
+                  print('가중치 존재 학습')
                   # print("class_weights_length : ", len(class_weights[0]))
-                  loss_fct = CrossEntropyLoss(weight = class_weights[0], reduction="none")
+                  loss_fct = CrossEntropyLoss(reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight).clone().detach()).mean()
 
