@@ -24,12 +24,14 @@ def get_BALD_acquisition(y_T, up_scale = False):
 	BALD_acq = (entropy_expected_p - expected_entropy)
 
 	# BALD SCORE의 원본 버전
-	if up_scale:
+	if not up_scale:
+		print('발드 그대로 출력')
 		return BALD_acq
 	# BALD SCORE의 새로운 버전
 	# BALD SCORE의 경우, 차이가 매우 작기 때문에 정규화를 거치고 나면 상대적으로 BALD의 차이가 가지는 의미가 퇴색됨. 그러므로, BALD Score를 확실하게 하기 위하여 up_scale을 진행.
 	# np.log(bald) ** 2
 	else:
+		print('발드 업스케일링 출력')
 		BALD_acq = np.where(BALD_acq < 0 , 1, BALD_acq)
 		BALD_acq = np.log(BALD_acq + 1e-10)**2
 
