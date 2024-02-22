@@ -608,7 +608,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
 
                 if not weight is None:
-                  print('가중치 존재 학습')
+                  # print('가중치 존재 학습')
                   loss_fct = CrossEntropyLoss(reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight).clone().detach()).mean()
@@ -762,7 +762,7 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
                 
                 if not weight is None:
-                  print('가중치 존재 학습')
+                  # print('가중치 존재 학습')
                   # print("class_weights_length : ", len(class_weights[0]))
                   loss_fct = CrossEntropyLoss(reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
@@ -909,7 +909,7 @@ class RobertaPtuningForSequenceClassification(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
 
                 if not weight is None:
-                  print('가중치 존재 학습')
+                  # print('가중치 존재 학습')
                   # print("class_weights_length : ", len(class_weights[0]))
                   loss_fct = CrossEntropyLoss(reduction="none")
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
