@@ -782,7 +782,15 @@ class SelfTrainer(object):
             
 
             if iter == self.self_training_epoch - 1:
-                break
+                self.unlabeled_data_num = 80000
+                self.pseudo_sample_num_or_ratio = int(self.unlabeled_data_num * 0.5)
+                T = 10
+
+            else :
+                T = 16
+                
+                
+            #     break
             
             # Teacher模型在unlabeled data上获取pseudo-labeled data，并根据uncertainty estimation进行采样
             logger.info("*"*72)
@@ -795,7 +803,7 @@ class SelfTrainer(object):
             unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
                 unlabeled_data_num=self.unlabeled_data_num,
-                T=16, 
+                T=T, 
                 num_classes=self.num_classes
                 )
             
