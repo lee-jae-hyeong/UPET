@@ -832,10 +832,10 @@ class SelfTrainer(object):
             self.pseudo_sample_num_or_ratio += plus_pseudo_sample_num
             print(iter, " 번째 self-training 변경 후 pseudo_sample_num_or_ratio : ", self.pseudo_sample_num_or_ratio)
             
-            # if iter == 1:
-            print(iter, " 번째 self-training 변경 전 unlabeled_data_num : ", self.unlabeled_data_num)
-            self.unlabeled_data_num += 10000
-            print(iter, " 번째 self-training 변경 후 unlabeled_data_num : ", self.unlabeled_data_num)
+            if iter == 2:
+                print(iter, " 번째 self-training 변경 전 unlabeled_data_num : ", self.unlabeled_data_num)
+                self.unlabeled_data_num += self.unlabeled_data_num
+                print(iter, " 번째 self-training 변경 후 unlabeled_data_num : ", self.unlabeled_data_num)
 
             # if self.cb_loss:
             #     logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
