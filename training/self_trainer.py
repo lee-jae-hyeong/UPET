@@ -707,8 +707,18 @@ class SelfTrainer(object):
                 print("*"*56)
                 print("* Training a new student model on active-labeled data. *")
                 print("*"*56)
-                
-                student_model = teacher_model
+
+                if iter > 0 :
+                    student_model = teacher_model
+
+                else:
+                    if self.use_prompt:
+                        print(iter, '_ 프롬프트 튜닝을 위한 초기화')
+                        student_model = self.student_base_model
+                        student_model = self.freeze_backbone(student_model, use_pe=True)
+                        print(iter, '프롬프트 백본 프리징')
+                    else:
+                        student_model = teacher_model
     
                 student_trainer: RobustTrainer = self.get_student_trainer(
                     base_model=student_model, 
@@ -897,9 +907,11 @@ class SelfTrainer(object):
             print("*"*56)
 
             if self.use_prompt:
-                print("USE_PROMPT AND STUDENT_MODEL INITIALIZE")
-                student_model = self.student_base_model
-                student_model = self.freeze_backbone(student_model, use_pe=True)
+                print("USE_PROMPT AND STUDENT_MODEL SELF_TRAINING NOT INITIALIZE: {} ITERATION".format(iter))
+                if iter >= 0:
+                    student_model = teacher_model
+                # student_model = self.student_base_model
+                # student_model = self.freeze_backbone(student_model, use_pe=True)
 
             else:
                 # if iter == 0:
