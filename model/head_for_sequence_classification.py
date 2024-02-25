@@ -643,11 +643,6 @@ class RobertaPrefixForSequenceClassification(RobertaPreTrainedModel):
         self.classifier = torch.nn.Linear(config.hidden_size, config.num_labels)
         self.init_weights()
 
-        if self.num_labels == 2:
-            self.loss_type = 'sigmoid'
-        elif self.num_labels > 2:
-            self.loss_type = 'softmax'
-
         # for param in self.roberta.parameters():
         #     param.requires_grad = False
         if self.config.use_pe:
