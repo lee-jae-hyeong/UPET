@@ -139,28 +139,41 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 
 		else :
 			print('SELF_TRAINING')
-			
-			p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
-			p_norm = p_norm/np.sum(p_norm)
 
-			# true_label_ = true_label[y==label]
-			# y_[indices] = true_label_[indices]
-			if len(X_input_ids) == 0: # add by wjn
-				not_sample += 1
-				continue
+			if uncert:
+				p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
+				p_norm = p_norm/np.sum(p_norm)
+	
+				# true_label_ = true_label[y==label]
+				# y_[indices] = true_label_[indices]
+				if len(X_input_ids) == 0: # add by wjn
+					not_sample += 1
+					continue
+	
+				# UST, UPET는 Active Learning이 없기 때문에, 다양성을 위해 확률적 샘플링을 진행하지만, UAST는 ST이전에 AL을 진행하기 때문에 다양성을 확보할 수 있음.
+				# self_training sample_selection 1번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이하인 경우엔, 모수가 충분치 않다고 판단 / 확률적 랜덤 샘플링 진행 
+				if len(X_input_ids) < (samples_per_class * 2):
+					logger.info ("Sampling with replacement.")
+					replace = True
+					indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
+					
+				# self_training sample_selection 2번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이상인 경우엔, 모수가 충분하다고 판단 / 상위 N개를 추출
+				else:
+					sorted_indices = np.argsort(-p_norm)
+					indices = sorted_indices[:samples_per_class]
 
-			# UST, UPET는 Active Learning이 없기 때문에, 다양성을 위해 확률적 샘플링을 진행하지만, UAST는 ST이전에 AL을 진행하기 때문에 다양성을 확보할 수 있음.
-			# self_training sample_selection 1번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이하인 경우엔, 모수가 충분치 않다고 판단 / 확률적 랜덤 샘플링 진행 
-			if len(X_input_ids) < (samples_per_class * 2):
-				logger.info ("Sampling with replacement.")
-				replace = True
-				indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
-				
-			# self_training sample_selection 2번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이상인 경우엔, 모수가 충분하다고 판단 / 상위 N개를 추출
 			else:
-				sorted_indices = np.argsort(-p_norm)
-				indices = sorted_indices[:samples_per_class]
+				print('NOT_UNCERTAINTY_SAMPLING AND RANDOM_SAMPLING BY SELF_TRAINING')
 				
+				if len(X_input_ids) < (samples_per_class * 2):
+					logger.info ("Sampling with replacement.")
+					replace = True
+				else:
+					replace = False
+
+				indices = np.random.choice(len(X_input_ids), samples_per_class, replace=replace)
+				
+					
 			
 			# if len(X_input_ids) < samples_per_class:
 			# 	logger.info ("Sampling with replacement.")
