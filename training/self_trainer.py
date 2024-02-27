@@ -526,7 +526,7 @@ class SelfTrainer(object):
             data_collator=self.student_data_collator,
             test_key=self.test_key,
             class_weights=class_weights,
-            callbacks = [EarlyStoppingCallback(early_stopping_patience=35)]
+            callbacks = [EarlyStoppingCallback(early_stopping_patience=15)]
         )
         return student_trainer
 
