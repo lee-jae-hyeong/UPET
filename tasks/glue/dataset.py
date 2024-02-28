@@ -16,7 +16,7 @@ import json
 import os
 
 # add by wjn
-def random_sampling(raw_datasets: load_dataset, data_type: str="train", num_examples_per_label: Optional[int]=16, seeds=455):
+def random_sampling(raw_datasets: load_dataset, data_type: str="train", num_examples_per_label: Optional[int]=16, seeds=211):
     assert data_type in ["train", "dev", "test"]
     np.random.seed(seeds)
     label_list = raw_datasets[data_type]["label"] # [0, 1, 0, 0, ...]
