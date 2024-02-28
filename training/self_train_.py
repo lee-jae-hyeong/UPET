@@ -24,6 +24,8 @@ from transformers.trainer_pt_utils import (
     SequentialDistributedSampler, 
     nested_concat,
     )
+from transformers import EarlyStoppingCallback
+
 from transformers.utils import logging
 from transformers.trainer_utils import denumpify_detensorize, TrainOutput
 from training.sampler import sample_by_bald_class_easiness
@@ -34,13 +36,13 @@ import random
 
 random_seed = 42
 
-torch.manual_seed(random_seed)
-torch.cuda.manual_seed(random_seed)
-torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-#np.random.seed(random_seed)
-random.seed(random_seed)
+# torch.manual_seed(random_seed)
+# torch.cuda.manual_seed(random_seed)
+# torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
+# torch.backends.cudnn.deterministic = True
+# torch.backends.cudnn.benchmark = False
+# #np.random.seed(random_seed)
+# random.seed(random_seed)
 
 
 logger = logging.get_logger('Self-training')
@@ -88,9 +90,9 @@ def get_class_balanced_loss_weight(samples_per_cls, no_of_classes, beta = 0.99):
 # add by wjn
 # revise by ljh
 def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16, least_num=10):
-    # number = [2, 12, 22, 32, 42, 52, 62, 72, 82, 92, 102]
+    number = [i for i in range(100)]
     
-    # np.random.choice(number)
+    np.random.choice(number)
 
     label_list = raw_datasets["label"] # [0, 1, 0, 0, ...]
     label_dict = dict()
@@ -162,7 +164,8 @@ class TeacherTrainer(BaseTrainer):
         ignore_keys: Optional[List[str]] = None,
         metric_key_prefix: str = "eval",
         T: int = 30,
-        num_classes: int = 0
+        num_classes: int = 0,
+        k_sample : float = 0.0
     ):
         """
         Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
@@ -233,20 +236,51 @@ class TeacherTrainer(BaseTrainer):
 
         # y_T = np.zeros((T, unlabeled_data_num, num_classes))
         y_T = list()
-
+        label = []
         for i in tqdm(range(T)):
             y_pred = []
 
             for step, inputs in enumerate(unlabeled_dataloader):
+                if i == 1:
+                    label.extend(inputs['labels'])
                 _, logits, __ = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys)
                 y_pred.extend(logits.detach().cpu().numpy().tolist())
             # print("y_pred.shape=", torch.Tensor(y_pred).shape) # [n, num_class]
             predict_proba = torch.softmax(torch.Tensor(y_pred).to(logits.device), -1)
+            k_sample_num = -1 * round(num_classes * k_sample)
+
+            if k_sample != 0.0:
+                print('변경전 0 : ', predict_proba[0])
+                print('변경전 1 : ', predict_proba[1])
+                predict_proba = predict_proba.detach().cpu().numpy().tolist()
+
+                if abs(k_sample_num) < 2:
+                    y_T.append(predict_proba.detach().cpu().numpy().tolist())
+                    
+                else:
+                    top_indices = np.argsort(predict_proba)[:, :k_sample_num]
+                    
+                    for j in range(len(top_indices)):
+                        predict_proba[j] = np.where(np.isin(np.arange(num_classes), top_indices[j]), 0, predict_proba[j])
+
+                        row_sum = np.sum(predict_proba[j])
+                        if j < 2:
+                            print('변경 중간 0 : ', predict_proba[j])
+                            print('row_sum : ', row_sum)
+                        predict_proba[j] = predict_proba[j] / row_sum
+                    print('변경후 0 : ', predict_proba[0])
+                    print('변경후 1 : ', predict_proba[1])
+                    print("길이 : ", len(predict_proba))
+                    y_T.append(predict_proba)
+                        
+            
+            else:
             # print("predict_proba.shape=", predict_proba.shape) # [n, num_class]
             # y_T[i] = predict_proba.detach().cpu().numpy().tolist()
-            y_T.append(predict_proba.detach().cpu().numpy().tolist())
+                y_T.append(predict_proba.detach().cpu().numpy().tolist())
         
         y_T = np.array(y_T)
+            
         #compute mean
         y_mean = np.mean(y_T, axis=0)
         # print("y_mean.shape=", y_mean.shape) # e.g., (4095, 3) [n, class_num]
@@ -257,11 +291,28 @@ class TeacherTrainer(BaseTrainer):
         y_pred = np.array([np.argmax(np.bincount(row)) for row in np.transpose(np.argmax(y_T, axis=-1))])
         assert y_pred.shape == (unlabeled_data_num,)
 
+        print(y_pred)
+        label = [tensor.item() for tensor in label]
+        matching_indices = [index for index, (item1, item2) in enumerate(zip(y_pred, label)) if item1 == item2]
+        print(label)
+        print('정확도 : ', accuracy_score(label, y_pred))
         #compute variance
         y_var = np.var(y_T, axis=0)
+        selected_values = [y_var[i] for i in matching_indices]
+        print('일치 분산 : ', np.mean(selected_values))
+
+        unmatching_indices = [index for index, (item1, item2) in enumerate(zip(y_pred, label)) if item1 != item2]
+        unselected_values = [y_var[i] for i in unmatching_indices]
+        print('불일치 분산 : ', np.mean(unselected_values))        
+        
         assert y_var.shape == (unlabeled_data_num, num_classes)
 
-        return unlabeled_dataset, y_mean, y_var, y_pred, y_T
+        return unlabeled_dataset, y_mean, y_var, y_pred, y_T, np.array(label)
+        # #compute variance
+        # y_var = np.var(y_T, axis=0)
+        # assert y_var.shape == (unlabeled_data_num, num_classes)
+
+        # return unlabeled_dataset, y_mean, y_var, y_pred, y_T
 
 
 
@@ -352,6 +403,11 @@ class SelfTrainer(object):
         self.dataset_name = dataset_name
         self.cb_loss_beta = self.semi_training_args.cb_loss_beta
         self.cb_loss = self.semi_training_args.cb_loss
+        self.use_prompt = self.semi_training_args.use_pe
+        self.active_learning = self.semi_training_args.active_learning
+        self.active_number = self.semi_training_args.active_number
+        self.uncert = self.semi_training_args.uncert
+        self.up_scale = self.semi_training_args.up_scale
 
     def get_teacher_trainer(
         self, 
@@ -375,7 +431,8 @@ class SelfTrainer(object):
             data_collator=self.teacher_data_collator,
             test_key=self.test_key,
             dataset_name=self.dataset_name,
-            class_weights=class_weights
+            class_weights=class_weights,
+            # callbacks = [EarlyStoppingCallback(early_stopping_patience=10)]
         )
         return teacher_trainer
     def predict_data(self, trainer, predict_dataset=None, log_file_path=None):
@@ -443,62 +500,6 @@ class SelfTrainer(object):
             accuracy = accuracy_score(predict_dataset['label'], predicted_labels)
             f.write(f"accuracy_score: {accuracy}\n")
 
-    # def predict_data(self, trainer, predict_dataset=None):
-    #     if predict_dataset is None:
-    #         logger.info("No dataset is available for testing")
-
-    #     elif isinstance(predict_dataset, dict):
-    #         predicted_labels = {}
-    #         for dataset_name, d in predict_dataset.items():
-    #             logger.info("*** Predict: %s ***" % dataset_name)
-    #             predictions, labels, metrics = trainer.predict(d, metric_key_prefix="predict")
-    #             predictions = np.argmax(predictions, axis=2)
-
-    #             predicted_labels = predictions.tolist()
-
-    #             trainer.log_metrics("predict", metrics)
-    #             trainer.save_metrics("predict", metrics)
-
-
-    #     else:
-    #         logger.info("*** Predict ***")
-    #         predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
-    #         #predictions = np.argmax(predictions, axis=2)
-    #         predictions = np.argmax(predictions, axis=1)
-
-
-    #         predicted_labels = predictions.tolist()
-
-    #         trainer.log_metrics("predict", metrics)
-    #         trainer.save_metrics("predict", metrics)
-
-            
-    #     f1_score_macro=f1_score(predict_dataset['label'], predicted_labels, average="macro")
-    #     recall_macro=recall_score(predict_dataset['label'], predicted_labels, average="macro")
-    #     precision_macro=precision_score(predict_dataset['label'], predicted_labels, average="macro")
-        
-    #     print("{}_f1_score_macro".format(f1_score_macro))
-    #     print("{}_recall_score_macro".format(recall_macro))
-    #     print("{}_precision_score_macro".format(precision_macro))
-
-    #     f1_score_micro=f1_score(predict_dataset['label'], predicted_labels, average="micro")
-    #     recall_micro=recall_score(predict_dataset['label'], predicted_labels, average="micro")
-    #     precision_micro=precision_score(predict_dataset['label'], predicted_labels, average="micro")
-        
-    #     print("{}_f1_score_micro".format(f1_score_macro))
-    #     print("{}_recall_micro".format(recall_macro))
-    #     print("{}_precision_micro".format(precision_macro))
-
-    #     f1_score_weighted=f1_score(predict_dataset['label'], predicted_labels, average="weighted")
-    #     recall_weighted=recall_score(predict_dataset['label'], predicted_labels, average="weighted")
-    #     precision_weighted=precision_score(predict_dataset['label'], predicted_labels, average="weighted")
-        
-    #     print("{}_f1_score_weighted".format(f1_score_macro))
-    #     print("{}_recall_weighted".format(recall_macro))
-    #     print("{}_precision_weighted".format(precision_macro))
-
-    #     accuracy=accuracy_score(predict_dataset['label'], predicted_labels)
-    #     print("{}_accuracy_score".format(accuracy))
     
     def get_student_trainer(
         self, 
@@ -524,7 +525,8 @@ class SelfTrainer(object):
             tokenizer=self.tokenizer,
             data_collator=self.student_data_collator,
             test_key=self.test_key,
-            class_weights=class_weights
+            class_weights=class_weights,
+            callbacks = [EarlyStoppingCallback(early_stopping_patience=15)]
         )
         return student_trainer
 
@@ -570,10 +572,10 @@ class SelfTrainer(object):
             print("*"*66)
             print("* Training teacher model over labeled data before self-training. *")
             print("*"*66)
-            load_model(teacher_model, os.path.join("/content/drive/MyDrive/UPET/checkpoints/self-training/e_cate2-roberta-base/head_prefix/checkpoint-644", "model.safetensors"))
-            #teacher_trainer.train()
+
+            teacher_trainer.train()
             #2024.01.18 코드 수정
-            #load_model(teacher_model, os.path.join(teacher_trainer.state.best_model_checkpoint, "model.safetensors"))
+            load_model(teacher_model, os.path.join(teacher_trainer.state.best_model_checkpoint, "model.safetensors"))
             #teacher_model.load_state_dict(torch.load(os.path.join(teacher_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
             teacher_trainer.model = teacher_model
 
@@ -589,10 +591,10 @@ class SelfTrainer(object):
         print("*"*50)
 
         logger.info("*"*30)
-        logger.info("* Starting Self-training ... *")
+        logger.info("* Starting Active Self-training ... *")
         logger.info("*"*30)
         print("*"*30)
-        print("* Starting Self-training ... *")
+        print("* Starting Active Self-training ... *")
         print("*"*30)
 
         best_test_metric = None
@@ -602,22 +604,159 @@ class SelfTrainer(object):
         self.predict_data(teacher_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics"))
 
         # 多轮Teacher-Student迭代训练
-        for iter in range(1, self.self_training_epoch):
 
-            if iter == 1: 
-                student_model = self.student_base_model
-                student_model = self.freeze_backbone(student_model, use_pe=True)
-                load_model(student_model, os.path.join("/content/drive/MyDrive/UPET/checkpoints/self-training/e_cate2-roberta-base/head_prefix/iteration/student_iter_0/checkpoint-66500/", "model.safetensors"))
+        plus_pseudo_sample_num = self.pseudo_sample_num_or_ratio
+        for iter in range(self.self_training_epoch):
+            if self.active_learning : 
+        
+                logger.info("*"*34)
+                logger.info("* Active-learning {}-th iteration *".format(iter))
+                logger.info("*"*34)
+                print("*"*34)
+                print("* Active-learning {}-th iteration *".format(iter))
+                print("*"*34)
+    
+    
+                # 获得Teacher模型在测试集上的效果
+                if iter > 0:
+                    teacher_trainer.model = teacher_model
+                    metrics = teacher_trainer.evaluate()
+                    # print("metrics=", metrics)
                 
+                '''
+                e.g., {'eval_loss': 0.6926815509796143, 'eval_accuracy': 0.5234657039711191, 'eval_runtime': 0.7267, 'eval_samples_per_second': 381.161, 'eval_steps_per_second': 48.161, 'epoch': 1.0}
+                '''
+                logger.info("*"*60)
+                logger.info("* The testing result of teacher model is {} result: {} *".format(self.test_key, metrics["eval_{}".format(self.test_key)]))
+                logger.info("*"*60)
+                print("*"*60)
+                print("* The testing result of teacher model is {} result: {} *".format(self.test_key, metrics["eval_{}".format(self.test_key)]))
+                print("*"*60)
+    
+                if best_test_metric is None or best_test_metric < metrics["eval_{}".format(self.test_key)]:
+                    best_test_metric = metrics["eval_{}".format(self.test_key)]
+                    best_self_training_iteration = iter
+                    best_teacher_model = teacher_model
+                    logger.info("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
+                    logger.info("The best teacher model testing result is {}.".format(best_test_metric))
+                    print("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
+                    print("The best teacher model testing result is {}.".format(best_test_metric))
+    
+                
+                # Teacher模型在unlabeled data上获取pseudo-labeled data，并根据uncertainty estimation进行采样
+                logger.info("*"*72)
+                logger.info("Active_learning for Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
+                logger.info("*"*72)
+                print("*"*72)
+                print("Active_learning for Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
+                print("*"*72)
+    
+                unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
+                    unlabeled_dataset=self.unlabeled_dataset, 
+                    unlabeled_data_num=self.unlabeled_data_num,
+                    T=16, 
+                    num_classes=self.num_classes
+                    )
+                
+                logger.info("*"*42)
+                logger.info("* Sampling reliable pseudo-labeled data. *")
+                logger.info("*"*42)
+                print("*"*42)
+                print("* Sampling reliable pseudo-labeled data. *")
+                print("*"*42)
+                
+                X_batch, y_batch, w_batch, X_idxs = sample_by_bald_class_easiness(
+                    tokenizer=self.tokenizer, 
+                    X=unlabeled_dataset, 
+                    y_mean=y_mean, 
+                    y_var=y_var, 
+                    y=y_pred, 
+                    num_samples=int(y_pred.shape[0] * self.pseudo_sample_num_or_ratio) if self.pseudo_sample_num_or_ratio <= 1.0 else int(self.pseudo_sample_num_or_ratio), 
+                    num_classes=self.num_classes, 
+                    y_T=y_T,
+                    alpha=self.alpha,
+                    cb_loss=self.cb_loss,
+                    true_label = true_label,
+                    active_learning = self.active_learning,
+                    active_number = self.active_number,
+                    uncert = self.uncert,
+                    up_scale = self.up_scale)
+
+                # Active_learning을 통해 레이블링된 데이터는 언레이블링 데이터에서 제외 처리.
+                print('제외 전 언레이블 데이터 : ', len(self.unlabeled_dataset))
+                check_number = len(self.unlabeled_dataset)
+                self.unlabeled_dataset = self.unlabeled_dataset.filter(lambda example: example['idx'] not in X_idxs)
+                print('제외 후 언레이블 데이터 : ', len(self.unlabeled_dataset))
+                print('차이 체크 : ', check_number - len(self.unlabeled_dataset), '정상 유무 : ', check_number - len(self.unlabeled_dataset) == self.active_number * self.num_classes)
+                
+                print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch)))
+    
+                pseudo_labeled_examples = X_batch
+                pseudo_labeled_examples["label"] = y_batch  
+                pseudo_labeled_dataset = DatasetK.from_dict(pseudo_labeled_examples)
+
+                for i in range(len(pseudo_labeled_dataset)):
+                    tmp_dataset=pseudo_labeled_dataset[i]
+                    self.train_dataset = self.train_dataset.add_item(tmp_dataset)
+                    print(i,"_번쨰_train_dataset_length : {}".format(len(self.train_dataset)))
+    
+                # 初始化一个新的Student模型，并让Student模型在pseudo-labeled data上进行鲁棒学习
+                logger.info("*"*56)
+                logger.info("* Training a new student model on active-labeled data. *")
+                logger.info("*"*56)
+                print("*"*56)
+                print("* Training a new student model on active-labeled data. *")
+                print("*"*56)
+
+                if iter > 0 :
+                    student_model = teacher_model
+
+                else:
+                    if self.use_prompt:
+                        print(iter, '_ 프롬프트 튜닝을 위한 초기화')
+                        student_model = self.student_base_model
+                        student_model = self.freeze_backbone(student_model, use_pe=True)
+                        print(iter, '프롬프트 백본 프리징')
+                    else:
+                        student_model = teacher_model
+    
+                student_trainer: RobustTrainer = self.get_student_trainer(
+                    base_model=student_model, 
+                    num_train_epochs=self.teacher_training_epoch,
+                    student_learning_rate=self.student_learning_rate,
+                    pseudo_labeled_dataset=self.train_dataset,
+                    output_dir=os.path.join(self.output_dir, "iteration", "active_student_iter_{}".format(iter))
+                )
+                student_trainer.train()
+                load_model(student_model, os.path.join(student_trainer.state.best_model_checkpoint, "model.safetensors"))
+                #student_model.load_state_dict(torch.load(os.path.join(student_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
+    
+                # 将Student模型参数赋给Teacher，作为下一轮训练的Teacher初始化
+                logger.info("*"*64)
+                logger.info("* Initializing a new teacher model from trained student model. *")
+                logger.info("*"*64)
+                print("*"*64)
+                print("* Initializing a new teacher model from trained student model. *")
+                print("*"*64)
                 teacher_model = student_model
                 # teacher_trainer = student_trainer
                 teacher_trainer: TeacherTrainer = self.get_teacher_trainer(
                     base_model=student_model, 
                     num_train_epochs=self.teacher_tuning_epoch, 
-                    output_dir=os.path.join(self.output_dir, "iteration", "teacher_iter_{}".format(iter))
+                    output_dir=os.path.join(self.output_dir, "iteration", "active_teacher_iter_{}".format(iter))
                 )
-                metrics = teacher_trainer.evaluate()
+    
+    
+                
+            
+                logger.info("********** Finishing Active-learning **********")
+                logger.info("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
+                logger.info("The best teacher model testing result is {}.".format(best_test_metric))
+                print("********** Finishing Active-learning **********")
+                print("The best teacher model at {}-th Active-learning iteration.".format(best_self_training_iteration))
+                print("The best teacher model testing result is {}.".format(best_test_metric))
 
+            
             logger.info("*"*34)
             logger.info("* Self-training {}-th iteration *".format(iter))
             logger.info("*"*34)
@@ -653,23 +792,15 @@ class SelfTrainer(object):
             
 
             if iter == self.self_training_epoch - 1:
-                break
+                self.unlabeled_data_num = 80000
+                self.pseudo_sample_num_or_ratio = int(self.unlabeled_data_num * 0.5)
+                T = 10
 
-
-            # # Teacher模型在labeled data上进行parameter-efficient tuning
-            # if iter > 0:
-            #     logger.info("*"*80)
-            #     logger.info("* Tuning the teacher model on labeled data at {}-th self-training iteration. *".format(iter))
-            #     logger.info("*"*80)
-            #     print("*"*80)
-            #     print("* Tuning the teacher model on labeled data at {}-th self-training iteration. *".format(iter))
-            #     print("*"*80)
-
-            #     teacher_model = self.freeze_backbone(teacher_model, use_pe=True)
-            #     # teacher_trainer: TeacherTrainer = self.get_teacher_trainer(base_model=teacher_model, num_train_epochs=self.teacher_tuning_epoch)
-            #     teacher_trainer.train()
-            #     teacher_model.load_state_dict(torch.load(os.path.join(teacher_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
-            #     teacher_trainer.model = teacher_model
+            else :
+                T = 16
+                
+                
+            #     break
             
             # Teacher模型在unlabeled data上获取pseudo-labeled data，并根据uncertainty estimation进行采样
             logger.info("*"*72)
@@ -679,10 +810,10 @@ class SelfTrainer(object):
             print("Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
             print("*"*72)
 
-            unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
+            unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
                 unlabeled_data_num=self.unlabeled_data_num,
-                T=20, 
+                T=T, 
                 num_classes=self.num_classes
                 )
             
@@ -693,7 +824,7 @@ class SelfTrainer(object):
             print("* Sampling reliable pseudo-labeled data. *")
             print("*"*42)
             
-            X_batch, y_batch, w_batch = sample_by_bald_class_easiness(
+            X_batch, y_batch, w_batch, _ = sample_by_bald_class_easiness(
                 tokenizer=self.tokenizer, 
                 X=unlabeled_dataset, 
                 y_mean=y_mean, 
@@ -703,31 +834,44 @@ class SelfTrainer(object):
                 num_classes=self.num_classes, 
                 y_T=y_T,
                 alpha=self.alpha,
-                cb_loss=self.cb_loss)
-        
-            self.pseudo_sample_num_or_ratio = int(self.pseudo_sample_num_or_ratio*1.2)
-            self.unlabeled_data_num = int(self.unlabeled_data_num*1.1)
-            print('num_samples : ', self.pseudo_sample_num_or_ratio)
-            print('unlabeled_data_num : ', self.unlabeled_data_num)
-            
-            print(w_batch, len(w_batch))
+                cb_loss=self.cb_loss,
+                true_label = true_label,
+                uncert = self.uncert,
+                up_scale = self.up_scale)
+
+            #num_samples = int(num_samples * 1.2)
+            #self.unlabeled_data_num = int(self.unlabeled_data_num * 1.1)
+
+            #print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
 
-            if self.cb_loss:
-                logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
-                logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
-                class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
-                class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
+            
+            print(iter, " 번째 self-training 변경 전 pseudo_sample_num_or_ratio : ", self.pseudo_sample_num_or_ratio)
+            self.pseudo_sample_num_or_ratio += plus_pseudo_sample_num
+            print(iter, " 번째 self-training 변경 후 pseudo_sample_num_or_ratio : ", self.pseudo_sample_num_or_ratio)
+            
+            if iter == 2:
+                print(iter, " 번째 self-training 변경 전 unlabeled_data_num : ", self.unlabeled_data_num)
+                self.unlabeled_data_num += self.unlabeled_data_num
+                print(iter, " 번째 self-training 변경 후 unlabeled_data_num : ", self.unlabeled_data_num)
+
+            # if self.cb_loss:
+            #     logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
+            #     logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
+            #     class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
+            #     class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
                 
   
             # add by ljh(copy UST)
             if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
+                print("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
                 X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
                 pseudo_labeled_examples["weight"] = X_conf
-                pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
+                # if self.cb_loss:
+                #     pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
                 
             else:
                 pseudo_labeled_examples = X_batch
@@ -743,7 +887,7 @@ class SelfTrainer(object):
                 if self.semi_training_args.confidence:
                     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
                     tmp_dataset["weight"] = labeled_data_conf
-                    tmp_dataset["class_weights"] = class_weights
+                    # tmp_dataset["class_weights"] = class_weights
                     
                 # if not self.semi_training_args.confidence:
                 #     tmp_dataset["weight"] = 1.0
@@ -761,18 +905,32 @@ class SelfTrainer(object):
             print("*"*56)
             print("* Training a new student model on pseudo-labeled data. *")
             print("*"*56)
-            
-            # if iter == 0:
-            student_model = self.student_base_model
-            student_model = self.freeze_backbone(student_model, use_pe=True)
+
+            if self.use_prompt:
+                print("USE_PROMPT AND STUDENT_MODEL SELF_TRAINING NOT INITIALIZE: {} ITERATION".format(iter))
+                if iter >= 0:
+                    student_model = teacher_model
+                # student_model = self.student_base_model
+                # student_model = self.freeze_backbone(student_model, use_pe=True)
+
+            else:
+                # if iter == 0:
+                print("NOT_USE_PROMPT AND STUDENT_MODEL INITIALIZE : {} ITERATION".format(iter))
+                student_model = teacher_model
+                    # student_model = self.student_base_model
+                    # student_model = self.freeze_backbone(student_model, use_pe=False)
+                
+
+                # else:
+                #     print("NOT_USE_PROMPT AND STUDENT_MODEL CONTINUOUS : {} ITERATION".format(iter))
+                    
 
             student_trainer: RobustTrainer = self.get_student_trainer(
                 base_model=student_model, 
                 num_train_epochs=self.student_training_epoch,
                 student_learning_rate=self.student_learning_rate,
                 pseudo_labeled_dataset=pseudo_labeled_dataset,
-                output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter)),
-                class_weights=class_weights
+                output_dir=os.path.join(self.output_dir, "iteration", "student_iter_{}".format(iter))
             )
             student_trainer.train()
             #2024.01.18 코드 수정
@@ -793,10 +951,9 @@ class SelfTrainer(object):
                 num_train_epochs=self.teacher_tuning_epoch, 
                 output_dir=os.path.join(self.output_dir, "iteration", "teacher_iter_{}".format(iter))
             )
-
-
-            
         
+        self.predict_data(teacher_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics_last"))
+
         logger.info("********** Finishing Self-training **********")
         logger.info("The best teacher model at {}-th self-training iteration.".format(best_self_training_iteration))
         logger.info("The best teacher model testing result is {}.".format(best_test_metric))
@@ -817,16 +974,16 @@ class SelfTrainer(object):
                 output_dir=os.path.join(self.output_dir, "teacher_iter_post")
             )
 
-            unlabeled_dataset, y_mean, y_var, y_pred, y_T = teacher_trainer.mc_evaluate(
+            unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                 unlabeled_dataset=self.unlabeled_dataset, 
-                unlabeled_data_num=55000,
-                T=5, 
+                unlabeled_data_num=80000,
+                T=10, 
                 num_classes=self.num_classes
                 )
             
-            post_sample_num = int(y_pred.shape[0] * 0.5)
+            post_sample_num = int(self.num_classes * 500)
             
-            X_batch, y_batch, w_batch = sample_by_bald_class_easiness(
+            X_batch, y_batch, w_batch, _ = sample_by_bald_class_easiness(
                 tokenizer=self.tokenizer, 
                 X=unlabeled_dataset, 
                 y_mean=y_mean, 
@@ -836,7 +993,10 @@ class SelfTrainer(object):
                 num_classes=self.num_classes, 
                 y_T=y_T,
                 alpha=self.alpha,
-                cb_loss=self.cb_loss)
+                cb_loss=self.cb_loss,
+                true_label = true_label,
+                uncert = self.uncert,
+                up_scale = self.up_scale)
             
             # add by ljh(copy UST)
             # if self.semi_training_args.confidence:
@@ -847,16 +1007,16 @@ class SelfTrainer(object):
             #     logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
             #     X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
             
-            print(w_batch, len(w_batch))
+            #print(w_batch, len(w_batch))
             print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch) + (len(self.train_dataset) / self.num_classes)))
 
 
-            if self.cb_loss:
-                logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
-                logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
+            # if self.cb_loss:
+            #     logger.info("Check Balanced_Loss : {}".format(self.cb_loss))
+            #     logger.info("Class Balanced_Loss_beta : {}".format(self.cb_loss_beta))
                 
-                class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
-                class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
+            #     class_count=np.bincount(y_batch) + (len(self.train_dataset) // self.num_classes)
+            #     class_weights=get_class_balanced_loss_weight(class_count, self.num_classes, beta = self.cb_loss_beta)
             
             if self.semi_training_args.confidence:
                 logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
@@ -864,7 +1024,7 @@ class SelfTrainer(object):
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
                 pseudo_labeled_examples["weight"] = X_conf
-                pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
+                #pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
             else:
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch               
@@ -879,7 +1039,7 @@ class SelfTrainer(object):
                 if self.semi_training_args.confidence:
                     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
                     tmp_dataset["weight"] = labeled_data_conf
-                    tmp_dataset["class_weights"] = class_weights
+                    # tmp_dataset["class_weights"] = class_weights
                     
                 # if not self.semi_training_args.confidence:
                 #     tmp_dataset["weight"] = 1.0
@@ -898,16 +1058,24 @@ class SelfTrainer(object):
             print("* Training a new student model on pseudo-labeled data. *")
             print("*"*56)
             
-            student_model = self.student_base_model
-            student_model = self.freeze_backbone(student_model, use_pe=True)
+            if self.use_prompt:
+                print("USE_PROMPT AND STUDENT_MODEL INITIALIZE")
+                student_model = self.student_base_model
+                student_model = self.freeze_backbone(student_model, use_pe=True)
+
+            else:
+                # if iter == 0:
+                print("NOT_USE_PROMPT AND STUDENT_MODEL INITIALIZE : {} ITERATION".format(iter))
+                student_model = teacher_model
+                    # student_model = self.student_base_model
+                    # student_model = self.freeze_backbone(student_model, use_pe=False)
 
             student_trainer: RobustTrainer = self.get_student_trainer(
                 base_model=student_model, 
                 num_train_epochs=self.student_training_epoch if len(pseudo_labeled_dataset) <= 4096 else int(self.student_training_epoch / 2),
                 student_learning_rate=self.student_learning_rate,
                 pseudo_labeled_dataset=pseudo_labeled_dataset,
-                output_dir=os.path.join(self.output_dir, "student_iter_{}".format(iter)),
-                class_weights=class_weights
+                output_dir=os.path.join(self.output_dir, "student_iter_{}".format(iter))
             )
 
                 
