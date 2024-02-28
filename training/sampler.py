@@ -121,7 +121,16 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		y_s.extend(y[indices])
 		tmp_y_var = np.zero(len(active_number))
 		w_s.extend(tmp_y_var)
+		
+		indices_to_keep = np.logical_not(np.isin(np.arange(len(res_score)), indices))
 
+		check_number = len(y)
+		print('ACTIVE_SAMPLING 이전의 데이터 숫자 : ', len(X), len(y_var), len(y))
+		X = X[indices_to_keep]
+		y_var = y_var[indices_to_keep]
+		y = y[indices_to_keep]
+		print('ACTIVE_SAMPLING 이후의 데이터 숫자 : ', len(X), len(y_var), len(y))
+		print('숫자 일치 유무 : ', check_number - active_number == len(y))
 
 		
 	for label in range(num_classes):
@@ -244,6 +253,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			X_s_mask_pos.extend(X_mask_pos[indices])
 		y_s.extend(y_[indices])
 		w_s.extend(y_var_[indices][:,label])
+		X_idxs.extend(np.ones(len(indices))* -1)
 
 	print("{}_SAMPLING_FAIL_COUNT".format(not_sample))
 	# X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s = shuffle(X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s)
