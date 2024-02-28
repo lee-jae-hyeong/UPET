@@ -140,9 +140,9 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			'attention_mask': np.array(active_X_s_attention_mask)
 		}
 		if "token_type_ids" in X.features:
-			pseudo_labeled_input['token_type_ids'] = np.array(active_X_s_token_type_ids)
+			active_labeled_input['token_type_ids'] = np.array(active_X_s_token_type_ids)
 		if "mask_pos" in X.features:
-			pseudo_labeled_input['mask_pos'] = np.array(active_X_s_mask_pos)
+			active_labeled_input['mask_pos'] = np.array(active_X_s_mask_pos)
 			
 		
 	for label in range(num_classes):
