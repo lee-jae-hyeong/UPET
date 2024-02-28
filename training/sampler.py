@@ -96,8 +96,33 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s, X_idxs = [], [], [], [], [], [], []
 	not_sample = 0
 
+	if active_learning:
+		
+		print('ACTIVE_LEARNING_START')
+		if uncert:
+			print('ACTIVE_LEARNING_UNCERTAINTY')
+			sorted_indices = np.argsort(res_score)
+			indices = sorted_indices[:active_number]
+		else:
+			print('ACTIVE_LEARNING_RANDOM_SAMPLE')
+			indices = np.random.choice(len(res_score), active_number, replace=False)
 
-	total_res_score = np.sum(res_score)
+		y[indices] = true_label[indices]
+		X_idxs.extend(X['idx'][indices])
+		X_s_input_ids.extend(X['input_ids'][indices])
+		X_s_attention_mask.extend(X['attention_mask'][indices])
+		
+	
+		if "token_type_ids" in X.features:
+			X_s_token_type_ids.extend(X['token_type_ids'][indices])
+		if "mask_pos" in X.features:
+			X_s_mask_pos.extend(X['mask_pos'][indices])
+			
+		y_s.extend(y[indices])
+		tmp_y_var = np.zero(len(active_number))
+		w_s.extend(tmp_y_var)
+
+
 		
 	for label in range(num_classes):
 		# X_input_ids, X_token_type_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['token_type_ids'])[y == label], np.array(X['attention_mask'])[y == label]
@@ -117,62 +142,62 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		#p_norm = BALD_acq[y==label]
 		p_norm = res_score[y==label]
 
-		#print('res_count : ', np.sum(p_norm)/total_res_score, num_samples * ratio)
+
 		print("res 평균 : ", np.mean(p_norm))
 
-		if active_learning:
-			if uncert:
-				print('ACRIVE_LEARNING_UNCERTAINTY_BASED')
-				sorted_indices = np.argsort(p_norm)
-				indices = sorted_indices[:active_number]
-				true_label_ = true_label[y==label]
-				y_[indices] = true_label_[indices]
-				X_idxs.extend(X_idx[indices])
+		# if active_learning:
+		# 	if uncert:
+		# 		print('ACRIVE_LEARNING_UNCERTAINTY_BASED')
+		# 		sorted_indices = np.argsort(p_norm)
+		# 		indices = sorted_indices[:active_number]
+		# 		true_label_ = true_label[y==label]
+		# 		y_[indices] = true_label_[indices]
+		# 		X_idxs.extend(X_idx[indices])
 
-			else:
-				print('ACRIVE_LEARNING_RANDOM_BASED')
-				indices = np.random.choice(len(X_input_ids), active_number, replace=False)
-				true_label_ = true_label[y==label]
-				y_[indices] = true_label_[indices]
-				X_idxs.extend(X_idx[indices])
+		# 	else:
+		# 		print('ACRIVE_LEARNING_RANDOM_BASED')
+		# 		indices = np.random.choice(len(X_input_ids), active_number, replace=False)
+		# 		true_label_ = true_label[y==label]
+		# 		y_[indices] = true_label_[indices]
+		# 		X_idxs.extend(X_idx[indices])
 
 
-		else :
-			print('SELF_TRAINING')
+		# else :
+		print('SELF_TRAINING')
 
-			if uncert:
-				p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
-				p_norm = p_norm/np.sum(p_norm)
-	
-				# true_label_ = true_label[y==label]
-				# y_[indices] = true_label_[indices]
-				if len(X_input_ids) == 0: # add by wjn
-					not_sample += 1
-					continue
-	
-				# UST, UPET는 Active Learning이 없기 때문에, 다양성을 위해 확률적 샘플링을 진행하지만, UAST는 ST이전에 AL을 진행하기 때문에 다양성을 확보할 수 있음.
-				# self_training sample_selection 1번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이하인 경우엔, 모수가 충분치 않다고 판단 / 확률적 랜덤 샘플링 진행 
-				if len(X_input_ids) < (samples_per_class * 2):
-					logger.info ("Sampling with replacement.")
-					replace = True
-					indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
-					
-				# self_training sample_selection 2번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이상인 경우엔, 모수가 충분하다고 판단 / 상위 N개를 추출
-				else:
-					sorted_indices = np.argsort(-p_norm)
-					indices = sorted_indices[:samples_per_class]
+		if uncert:
+			p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
+			p_norm = p_norm/np.sum(p_norm)
 
-			else:
-				print('NOT_UNCERTAINTY_SAMPLING AND RANDOM_SAMPLING BY SELF_TRAINING')
+			# true_label_ = true_label[y==label]
+			# y_[indices] = true_label_[indices]
+			if len(X_input_ids) == 0: # add by wjn
+				not_sample += 1
+				continue
+
+			# UST, UPET는 Active Learning이 없기 때문에, 다양성을 위해 확률적 샘플링을 진행하지만, UAST는 ST이전에 AL을 진행하기 때문에 다양성을 확보할 수 있음.
+			# self_training sample_selection 1번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이하인 경우엔, 모수가 충분치 않다고 판단 / 확률적 랜덤 샘플링 진행 
+			if len(X_input_ids) < (samples_per_class * 2):
+				logger.info ("Sampling with replacement.")
+				replace = True
+				indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
 				
-				if len(X_input_ids) < (samples_per_class * 2):
-					logger.info ("Sampling with replacement.")
-					replace = True
-				else:
-					replace = False
+			# self_training sample_selection 2번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이상인 경우엔, 모수가 충분하다고 판단 / 상위 N개를 추출
+			else:
+				sorted_indices = np.argsort(-p_norm)
+				indices = sorted_indices[:samples_per_class]
 
-				indices = np.random.choice(len(X_input_ids), samples_per_class, replace=replace)
-				
+		else:
+			print('NOT_UNCERTAINTY_SAMPLING AND RANDOM_SAMPLING BY SELF_TRAINING')
+			
+			if len(X_input_ids) < (samples_per_class * 2):
+				logger.info ("Sampling with replacement.")
+				replace = True
+			else:
+				replace = False
+
+			indices = np.random.choice(len(X_input_ids), samples_per_class, replace=replace)
+			
 					
 			
 			# if len(X_input_ids) < samples_per_class:
