@@ -92,8 +92,10 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	logger.info (f'res_score: {res_score}')
 
 	samples_per_class = num_samples // num_classes
+
+	active_X_s_input_ids, active_X_s_token_type_ids, active_X_s_attention_mask, active_X_s_mask_pos, active_y_s, active_w_s, active_X_idxs = [], [], [], [], [], [], []
 	
-	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s, X_idxs = [], [], [], [], [], [], []
+	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
 	not_sample = 0
 
 	if active_learning:
@@ -108,19 +110,19 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			indices = np.random.choice(len(res_score), active_number, replace=False)
 
 		y[indices] = true_label[indices]
-		X_idxs.extend(X['idx'][indices])
-		X_s_input_ids.extend(X['input_ids'][indices])
-		X_s_attention_mask.extend(X['attention_mask'][indices])
+		active_X_idxs.extend(X['idx'][indices])
+		active_X_s_input_ids.extend(X['input_ids'][indices])
+		active_X_s_attention_mask.extend(X['attention_mask'][indices])
 		
 	
 		if "token_type_ids" in X.features:
-			X_s_token_type_ids.extend(X['token_type_ids'][indices])
+			active_X_s_token_type_ids.extend(X['token_type_ids'][indices])
 		if "mask_pos" in X.features:
-			X_s_mask_pos.extend(X['mask_pos'][indices])
+			active_X_s_mask_pos.extend(X['mask_pos'][indices])
 			
-		y_s.extend(y[indices])
+		active_y_s.extend(y[indices])
 		tmp_y_var = np.zero(len(active_number))
-		w_s.extend(tmp_y_var)
+		active_w_s.extend(tmp_y_var)
 		
 		indices_to_keep = np.logical_not(np.isin(np.arange(len(res_score)), indices))
 
@@ -129,14 +131,24 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		X = X[indices_to_keep]
 		y_var = y_var[indices_to_keep]
 		y = y[indices_to_keep]
+		
 		print('ACTIVE_SAMPLING 이후의 데이터 숫자 : ', len(X), len(y_var), len(y))
 		print('숫자 일치 유무 : ', check_number - active_number == len(y))
-
+		
+		active_labeled_input = {
+			'input_ids': np.array(active_X_s_input_ids), 
+			'attention_mask': np.array(active_X_s_attention_mask)
+		}
+		if "token_type_ids" in X.features:
+			pseudo_labeled_input['token_type_ids'] = np.array(active_X_s_token_type_ids)
+		if "mask_pos" in X.features:
+			pseudo_labeled_input['mask_pos'] = np.array(active_X_s_mask_pos)
+			
 		
 	for label in range(num_classes):
 		# X_input_ids, X_token_type_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['token_type_ids'])[y == label], np.array(X['attention_mask'])[y == label]
 		X_input_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['attention_mask'])[y == label]
-		X_idx = np.array(X['idx'])[y == label]
+		#X_idx = np.array(X['idx'])[y == label]
 		if "token_type_ids" in X.features:
 			X_token_type_ids = np.array(X['token_type_ids'])[y == label]
 		if "mask_pos" in X.features:
@@ -253,7 +265,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			X_s_mask_pos.extend(X_mask_pos[indices])
 		y_s.extend(y_[indices])
 		w_s.extend(y_var_[indices][:,label])
-		X_idxs.extend(np.ones(len(indices))* -1)
+		#X_idxs.extend(np.ones(len(indices))* -1)
 
 	print("{}_SAMPLING_FAIL_COUNT".format(not_sample))
 	# X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s = shuffle(X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s)
@@ -276,7 +288,8 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		pseudo_labeled_input['token_type_ids'] = np.array(X_s_token_type_ids)
 	if "mask_pos" in X.features:
 		pseudo_labeled_input['mask_pos'] = np.array(X_s_mask_pos)
-	return pseudo_labeled_input, np.array(y_s), np.array(w_s), X_idxs
+		
+	return pseudo_labeled_input, np.array(y_s), np.array(w_s), active_labeled_input, np.array(active_y_s), np.array(active_w_s), active_X_idxs
 
 
 def sample_by_bald_class_difficulty(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T):
