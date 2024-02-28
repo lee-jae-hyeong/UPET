@@ -33,7 +33,7 @@ def get_BALD_acquisition(y_T, up_scale = False):
 	else:
 		print('발드 업스케일링 출력')
 		BALD_acq = np.where(BALD_acq < 0 , 1, BALD_acq)
-		BALD_acq = np.log(BALD_acq + 1e-10)**2
+		BALD_acq = -np.log(BALD_acq + 1e-10)
 
 		return BALD_acq
 
