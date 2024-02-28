@@ -654,7 +654,7 @@ class SelfTrainer(object):
                 unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                     unlabeled_dataset=self.unlabeled_dataset, 
                     unlabeled_data_num=self.unlabeled_data_num,
-                    T=10, 
+                    T=15, 
                     num_classes=self.num_classes
                     )
                 
@@ -783,7 +783,7 @@ class SelfTrainer(object):
                 print("********** Finishing Active-learning **********")
                 print("The best teacher model at {}-th Active-learning iteration.".format(best_self_training_iteration))
                 print("The best teacher model testing result is {}.".format(best_test_metric))
-                self.predict_data(teacher_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics_last"))
+                # self.predict_data(teacher_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics_last"))
 
             else:
         
