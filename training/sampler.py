@@ -246,6 +246,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			# add by ljh
 			# 샘플링 했을 때, 얼마나 부족한지 체크
 			if len(set(indices)) != samples_per_class:
+				indices = np.array(list(set(indices)))
 				print("samples_per_class : {}".format(samples_per_class))
 				print("sampling_count : {}".format(len(set(indices))))
 				
@@ -253,7 +254,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 				print("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class))
 				# if cb_loss:
 				# 	# cb_loss 적용 시, 중복 제거
-				# 	indices = np.array(list(set(indices)))
+			# indices = np.array(list(set(indices)))
 				
 			
 		X_s_input_ids.extend(X_input_ids[indices])
