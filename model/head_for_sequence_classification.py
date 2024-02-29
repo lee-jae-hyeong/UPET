@@ -317,7 +317,9 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
         prefix_tokens = self.prefix_tokens.unsqueeze(0).expand(batch_size, -1).to(self.bert.device)
         prompts = self.prefix_encoder(prefix_tokens)
         return prompts
-
+    def phce_loss(self, prob, t):
+        return (-t * prob) + torch.log(t) + 1
+        
     def forward(
         self,
         input_ids=None,
@@ -331,7 +333,8 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
         output_hidden_states=None,
         return_dict=None,
         weight=None,
-        class_weight=None
+        class_weight=None,
+        t = None
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -389,12 +392,19 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
                 if not weight is None:
                   print('가중치 존재')
                   loss_fct = CrossEntropyLoss(reduction="none")
+                    probs = F.softmax(logits, dim=1)
                   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                   loss = (loss * torch.tensor(weight)).mean()
 
                 else:
-                  loss_fct = CrossEntropyLoss()
-                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                    probs = F.softmax(logits, dim=1)
+                    phce_loss_param = 1/t
+                    adjusted_probs = adjusted_probs = torch.where(probs < phce_loss_param, self.phce_loss(probs, t), probs)
+                    
+                    loss_fct = CrossEntropyLoss()
+                    loss = loss_fn(torch.log(adjusted_probs.view(-1, self.num_labels)), labels.view(-1))
+                      #loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                    
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
