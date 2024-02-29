@@ -108,17 +108,19 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		else:
 			print('ACTIVE_LEARNING_RANDOM_SAMPLE')
 			indices = np.random.choice(len(res_score), active_number, replace=False)
-
+		print(indices)
+		print(X)
+		print(X['idx'])
 		y[indices] = true_label[indices]
-		active_X_idxs.extend(X['idx'][indices])
-		active_X_s_input_ids.extend(X['input_ids'][indices])
-		active_X_s_attention_mask.extend(X['attention_mask'][indices])
+		active_X_idxs.extend(np.array(X['idx'])[indices])
+		active_X_s_input_ids.extend(np.array(X['input_ids'])[indices])
+		active_X_s_attention_mask.extend(np.array(X['attention_mask'])[indices])
 		
 	
 		if "token_type_ids" in X.features:
-			active_X_s_token_type_ids.extend(X['token_type_ids'][indices])
+			active_X_s_token_type_ids.extend(np.array(X['token_type_ids'])[indices])
 		if "mask_pos" in X.features:
-			active_X_s_mask_pos.extend(X['mask_pos'][indices])
+			active_X_s_mask_pos.extend(np.array(X['mask_pos'])[indices])
 			
 		active_y_s.extend(y[indices])
 		tmp_y_var = np.zero(len(active_number))
@@ -127,12 +129,12 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		indices_to_keep = np.logical_not(np.isin(np.arange(len(res_score)), indices))
 
 		check_number = len(y)
-		print('ACTIVE_SAMPLING 이전의 데이터 숫자 : ', len(X), len(y_var), len(y))
+		print('ACTIVE_SAMPLING 이전의 데이터 숫자 : ', len(X['idx']), len(y_var), len(y))
 		X = X[indices_to_keep]
 		y_var = y_var[indices_to_keep]
 		y = y[indices_to_keep]
 		
-		print('ACTIVE_SAMPLING 이후의 데이터 숫자 : ', len(X), len(y_var), len(y))
+		print('ACTIVE_SAMPLING 이후의 데이터 숫자 : ', len(X['idx']), len(y_var), len(y))
 		print('숫자 일치 유무 : ', check_number - active_number == len(y))
 		
 		active_labeled_input = {
