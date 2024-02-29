@@ -311,7 +311,7 @@ class ContrastiveLoss(nn.Module):
         loss2  = self.get_loss(x1.detach(), x0, y)
         return (loss1 + loss2) /2
 
-class CustomCrossEntropyLoss(nn.Module):
+class CustomPhceCrossEntropyLoss(nn.Module):
     def __init__(self, t=1):
         super(CustomCrossEntropyLoss, self).__init__()
         self.t = t
