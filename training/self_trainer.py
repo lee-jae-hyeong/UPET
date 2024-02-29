@@ -408,6 +408,7 @@ class SelfTrainer(object):
         self.active_number = self.semi_training_args.active_number
         self.uncert = self.semi_training_args.uncert
         self.up_scale = self.semi_training_args.up_scale
+        self.phce_t = self.semi_training_args.phce_t
 
     def get_teacher_trainer(
         self, 
@@ -707,7 +708,7 @@ class SelfTrainer(object):
                     X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
                     pseudo_labeled_examples = X_batch
                     pseudo_labeled_examples["label"] = y_batch
-                    pseudo_labeled_examples["weight"] = X_conf
+                    pseudo_labeled_examples["t"] = self.phce_t
 
                     
                 else:
@@ -723,7 +724,7 @@ class SelfTrainer(object):
     
                     if self.semi_training_args.confidence:
                         labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
-                        tmp_dataset["weight"] = labeled_data_conf
+                        tmp_dataset["t"] = self.phce_t
     
                     pseudo_labeled_dataset = pseudo_labeled_dataset.add_item(tmp_dataset)
                 
@@ -900,7 +901,7 @@ class SelfTrainer(object):
                     X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
                     pseudo_labeled_examples = X_batch
                     pseudo_labeled_examples["label"] = y_batch
-                    pseudo_labeled_examples["weight"] = X_conf
+                    pseudo_labeled_examples["t"] = self.phce_t
                     # if self.cb_loss:
                     #     pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
                     
@@ -917,7 +918,7 @@ class SelfTrainer(object):
     
                     if self.semi_training_args.confidence:
                         labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
-                        tmp_dataset["weight"] = labeled_data_conf
+                        tmp_dataset["t"] = self.phce_t
                         # tmp_dataset["class_weights"] = class_weights
                         
                     # if not self.semi_training_args.confidence:
@@ -1054,7 +1055,7 @@ class SelfTrainer(object):
                 X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
                 pseudo_labeled_examples = X_batch
                 pseudo_labeled_examples["label"] = y_batch
-                pseudo_labeled_examples["weight"] = X_conf
+                pseudo_labeled_examples["t"] = self.phce_t
                 #pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
             else:
                 pseudo_labeled_examples = X_batch
@@ -1069,7 +1070,7 @@ class SelfTrainer(object):
 
                 if self.semi_training_args.confidence:
                     labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
-                    tmp_dataset["weight"] = labeled_data_conf
+                    tmp_dataset["t"] = self.phce_t
                     # tmp_dataset["class_weights"] = class_weights
                     
                 # if not self.semi_training_args.confidence:
