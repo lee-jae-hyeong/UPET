@@ -318,7 +318,8 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
         prompts = self.prefix_encoder(prefix_tokens)
         return prompts
     def phce_loss(self, prob, t):
-        return (-t * prob) + torch.log(t) + 1
+        adjust_loss = (-t * prob) + torch.log(t) + 1
+        return min(adjust_loss, 0.999)
         
     def forward(
         self,
