@@ -19,6 +19,7 @@ from model.deberta import DebertaModel, DebertaPreTrainedModel, ContextPooler, S
 from model.model_adaptation import BertAdaModel, RobertaAdaModel, init_adapter
 from model.parameter_freeze import ParameterFreeze # add by wjn
 import copy, random
+from loss import CustomPhceCrossEntropyLoss
 
 # random_seed = 42
 # torch.manual_seed(random_seed)
@@ -572,7 +573,8 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         output_hidden_states=None,
         return_dict=None,
         weight=None,
-        class_weights=None
+        class_weights=None,
+        t = None
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
@@ -618,16 +620,25 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
             elif self.config.problem_type == "single_label_classification":
 
-                if not weight is None:
-                  # print('가중치 존재 학습')
-                  loss_fct = CrossEntropyLoss(reduction="none")
-                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-                  loss = (loss * torch.tensor(weight).clone().detach()).mean()
-
-
+                if t is None:
+                    loss_fct = CrossEntropyLoss()
+                    loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1)) 
+                    
                 else:
-                  loss_fct = CrossEntropyLoss()
-                  loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                    loss_fct = CustomPhceCrossEntropyLoss(t=t)
+                    loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1)) 
+                    
+
+                # if not weight is None:
+                #   # print('가중치 존재 학습')
+                #   loss_fct = CrossEntropyLoss(reduction="none")
+                #   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                #   loss = (loss * torch.tensor(weight).clone().detach()).mean()
+
+
+                # else:
+                #   loss_fct = CrossEntropyLoss()
+                #   loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
 
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
