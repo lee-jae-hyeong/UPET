@@ -337,6 +337,11 @@ class SemiSupervisedArguments:
         metadata={
         "help" : "Uncertainty_up_scale_check"})
 
+    phce_t :  Optional[float] = field(
+        default=1.2,
+        metadata={
+        "help" : "phce_ce for t parameter"})
+
 
 @dataclass
 class QuestionAnwseringArguments:
