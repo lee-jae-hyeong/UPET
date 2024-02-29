@@ -399,7 +399,7 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
                 else:
                     probs = F.softmax(logits, dim=1)
                     phce_loss_param = 1/t
-                    adjusted_probs = adjusted_probs = torch.where(probs < phce_loss_param, self.phce_loss(probs, t), probs)
+                    adjusted_probs = torch.where(probs <= phce_loss_param, self.phce_loss(probs, t), probs)
                     
                     loss_fct = CrossEntropyLoss()
                     loss = loss_fn(torch.log(adjusted_probs.view(-1, self.num_labels)), labels.view(-1))
