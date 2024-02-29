@@ -823,13 +823,13 @@ class SelfTrainer(object):
                     print("The best teacher model testing result is {}.".format(best_test_metric))
                 
     
-                if iter == self.self_training_epoch - 1:
-                    self.unlabeled_data_num = 80000
-                    self.pseudo_sample_num_or_ratio = int(self.unlabeled_data_num * 0.5)
-                    T = 10
+                # if iter == self.self_training_epoch - 1:
+                #     self.unlabeled_data_num = 80000
+                #     self.pseudo_sample_num_or_ratio = int(self.unlabeled_data_num * 0.5)
+                #     T = 10
     
-                else :
-                    T = 16
+                # else :
+                #     T = 16
                     
                     
                 #     break
@@ -845,7 +845,7 @@ class SelfTrainer(object):
                 unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
                     unlabeled_dataset=self.unlabeled_dataset, 
                     unlabeled_data_num=self.unlabeled_data_num,
-                    T=T, 
+                    T=15, 
                     num_classes=self.num_classes
                     )
                 
@@ -856,7 +856,7 @@ class SelfTrainer(object):
                 print("* Sampling reliable pseudo-labeled data. *")
                 print("*"*42)
                 
-                X_batch, y_batch, w_batch, _ = sample_by_bald_class_easiness(
+                X_batch, y_batch, w_batch, _, _, _, _, = sample_by_bald_class_easiness(
                     tokenizer=self.tokenizer, 
                     X=unlabeled_dataset, 
                     y_mean=y_mean, 
@@ -898,10 +898,10 @@ class SelfTrainer(object):
                 if self.semi_training_args.confidence:
                     logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
                     print("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
-                    X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
+                    #X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
                     pseudo_labeled_examples = X_batch
                     pseudo_labeled_examples["label"] = y_batch
-                    pseudo_labeled_examples["t"] = self.phce_t
+                    pseudo_labeled_examples["t"] = np.ones(len(y_batch))*self.phce_t
                     # if self.cb_loss:
                     #     pseudo_labeled_examples["class_weights"] = np.repeat([class_weights], len(y_batch), axis=0)
                     
@@ -917,7 +917,7 @@ class SelfTrainer(object):
                     tmp_dataset=self.train_dataset[i]
     
                     if self.semi_training_args.confidence:
-                        labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
+                        #labeled_data_conf = -np.log(1e-10)*self.semi_training_args.conf_alpha
                         tmp_dataset["t"] = self.phce_t
                         # tmp_dataset["class_weights"] = class_weights
                         
