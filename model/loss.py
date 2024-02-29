@@ -332,13 +332,13 @@ class CustomPhceCrossEntropyLoss(nn.Module):
     
     def phce_loss_adjust(self, prob):
 
-        threshold = 1/self.t
-        adjust_loss = torch.where(prob <= threshold, self.phce_loss(prob), prob)
+        self.threshold = 1/self.t
+        adjust_loss = torch.where(prob <= self.threshold, self.phce_loss(prob), prob)
 
         return adjust_loss
 
     def phce_loss(self, prob):
-        return torch.min((-self.t * prob) + torch.log(torch.tensor(self.t)) + 1, torch.tensor(0.9))
+        return torch.min((-self.t * prob) + torch.log(torch.tensor(self.t)) + 1, torch.tensor(self.threshold))
 
 
 class LossCriterion(IntEnum):
