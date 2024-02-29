@@ -311,6 +311,34 @@ class ContrastiveLoss(nn.Module):
         loss2  = self.get_loss(x1.detach(), x0, y)
         return (loss1 + loss2) /2
 
+class CustomCrossEntropyLoss(nn.Module):
+    def __init__(self, t=1):
+        super(CustomCrossEntropyLoss, self).__init__()
+        self.t = t
+
+    def forward(self, logits, labels):
+        # 소프트맥스 함수를 통해 로짓 값을 확률 값으로 변환
+        probs = torch.softmax(logits, dim=1)
+        
+        # # # 크로스 엔트로피 손실 계산
+        # loss = nn.CrossEntropyLoss()(logits, labels)
+        
+        probs_tensor = probs[range(len(labels)), labels]
+        # 확률을 조정하는 함수 적용
+        adjusted_probs = self.phce_loss_adjust(probs_tensor)
+        adjust_loss = -torch.log(adjusted_probs).mean()
+        
+        return adjust_loss
+    
+    def phce_loss_adjust(self, prob):
+
+        threshold = 1/self.t
+        adjust_loss = torch.where(prob <= threshold, self.phce_loss(prob), prob)
+
+        return adjust_loss
+
+    def phce_loss(self, prob):
+        return torch.min((-self.t * prob) + torch.log(torch.tensor(self.t)) + 1, torch.tensor(0.9))
 
 
 class LossCriterion(IntEnum):
