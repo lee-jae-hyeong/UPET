@@ -126,16 +126,16 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		#tmp_y_var = np.zero(len(active_number))
 		#active_w_s.extend(tmp_y_var)
 		
-		indices_to_keep = np.logical_not(np.isin(np.arange(len(res_score)), indices))
+		#indices_to_keep = np.logical_not(np.isin(np.arange(len(res_score)), indices))
 
 		check_number = len(y)
 		print('ACTIVE_SAMPLING 이전의 데이터 숫자 : ', len(X['idx']), len(y_var), len(y))
-		X = X[indices_to_keep]
-		y_var = y_var[indices_to_keep]
-		y = y[indices_to_keep]
+		#X = X[indices_to_keep]
+		#y_var = y_var[indices_to_keep]
+		#y = y[indices_to_keep]
 		
-		print('ACTIVE_SAMPLING 이후의 데이터 숫자 : ', len(X['idx']), len(y_var), len(y))
-		print('숫자 일치 유무 : ', check_number - active_number == len(y))
+		#print('ACTIVE_SAMPLING 이후의 데이터 숫자 : ', len(X['idx']), len(y_var), len(y))
+		#print('숫자 일치 유무 : ', check_number - active_number == len(y))
 		
 		active_labeled_input = {
 			'input_ids': np.array(active_X_s_input_ids), 
