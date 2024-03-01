@@ -753,7 +753,7 @@ class SelfTrainer(object):
                     base_model=student_model, 
                     num_train_epochs=self.teacher_training_epoch,
                     student_learning_rate=self.student_learning_rate,
-                    pseudo_labeled_dataset=pseudo_labeled_examples,
+                    pseudo_labeled_dataset=pseudo_labeled_dataset,
                     output_dir=os.path.join(self.output_dir, "iteration", "active_student_iter_{}".format(iter))
                 )
                 student_trainer.train()
