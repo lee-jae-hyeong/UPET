@@ -313,7 +313,7 @@ class ContrastiveLoss(nn.Module):
 
 class CustomPhceCrossEntropyLoss(nn.Module):
     def __init__(self, t=1):
-        super(CustomCrossEntropyLoss, self).__init__()
+        super(CustomPhceCrossEntropyLoss, self).__init__()
         self.t = t
 
     def forward(self, logits, labels):
