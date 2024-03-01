@@ -708,7 +708,7 @@ class SelfTrainer(object):
                     X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
                     pseudo_labeled_examples = X_batch
                     pseudo_labeled_examples["label"] = y_batch
-                    pseudo_labeled_examples["t"] = self.phce_t
+                    pseudo_labeled_examples["t"] = np.ones(len(y_batch)) * self.phce_t
 
                     
                 else:
@@ -753,7 +753,7 @@ class SelfTrainer(object):
                     base_model=student_model, 
                     num_train_epochs=self.teacher_training_epoch,
                     student_learning_rate=self.student_learning_rate,
-                    pseudo_labeled_dataset=self.train_dataset,
+                    pseudo_labeled_dataset=pseudo_labeled_examples,
                     output_dir=os.path.join(self.output_dir, "iteration", "active_student_iter_{}".format(iter))
                 )
                 student_trainer.train()
