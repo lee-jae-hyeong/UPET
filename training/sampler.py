@@ -212,6 +212,22 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 				# sorted_indices = np.argsort(-p_norm)
 				# indices = sorted_indices[:samples_per_class]
 
+			if not true_label is None:
+				true_label_ = true_label[y==label]
+				print(label,' 의 정확도 : ',accuracy_score(true_label_[indices], y_[indices]))
+				# print('실제 : ', true_label_[indices])
+				# print('수도 레이블 : ', y_[indices])
+			
+			# add by ljh
+			# 샘플링 했을 때, 얼마나 부족한지 체크
+			if len(set(indices)) != samples_per_class:
+				indices = np.array(list(set(indices)))
+				print("samples_per_class : {}".format(samples_per_class))
+				print("sampling_count : {}".format(len(set(indices))))
+				
+				logger.info ("{}_Not Enough data ratio".format(len(set(indices)), samples_per_class)) 
+				print("{}_Not Enough data ratio".format(len(set(indices))/samples_per_class))
+
 		else:
 			print('NOT_UNCERTAINTY_SAMPLING AND RANDOM_SAMPLING BY SELF_TRAINING')
 			
