@@ -108,9 +108,9 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		else:
 			print('ACTIVE_LEARNING_RANDOM_SAMPLE')
 			indices = np.random.choice(len(res_score), active_number, replace=False)
-		print(indices)
-		print(X)
-		print(X['idx'])
+		print(len(indices))
+		# print(X)
+		# print(X['idx'])
 		y[indices] = true_label[indices]
 		active_X_idxs.extend(np.array(X['idx'])[indices])
 		active_X_s_input_ids.extend(np.array(X['input_ids'])[indices])
@@ -123,8 +123,8 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			active_X_s_mask_pos.extend(np.array(X['mask_pos'])[indices])
 			
 		active_y_s.extend(y[indices])
-		tmp_y_var = np.zero(len(active_number))
-		active_w_s.extend(tmp_y_var)
+		#tmp_y_var = np.zero(len(active_number))
+		#active_w_s.extend(tmp_y_var)
 		
 		indices_to_keep = np.logical_not(np.isin(np.arange(len(res_score)), indices))
 
