@@ -390,7 +390,7 @@ class BertPtuningForSequenceClassification(BertPreTrainedModel):
                     loss = loss_fct(logits.squeeze(), labels.squeeze())
                 else:
                     loss = loss_fct(logits, labels)
-            elif self.config.problem_type == "single_label_classification":]
+            elif self.config.problem_type == "single_label_classification":
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                 # if not weight is None:
@@ -627,6 +627,8 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
                     loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1)) 
                     
                 else:
+                    t = t[0]
+                    print(t)
                     loss_fct = CustomPhceCrossEntropyLoss(t=t)
                     loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1)) 
                     
