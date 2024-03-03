@@ -16,6 +16,31 @@ from sklearn.metrics import accuracy_score
 
 logger = logging.getLogger('UST_RES')
 
+def margin_sampling(y_mean):
+    """
+    Margin Sampling을 사용하여 다음으로 라벨링할 샘플을 선택합니다.
+    
+    매개변수:
+        probabilities (2D 배열): 각 샘플에 대한 클래스별 예측 확률을 포함하는 2D 배열입니다.
+                                  각 행은 하나의 샘플을 나타내며, 각 열은 클래스를 나타냅니다.
+    
+    반환값:
+        selected_index (int): 선택된 샘플의 인덱스입니다.
+    """
+    # 각 샘플의 예측된 클래스 인덱스
+    predicted_classes = np.argmax(y_mean, axis=1)
+    
+    # 각 샘플의 최대 예측 확률
+    max_probabilities = np.max(y_mean, axis=1)
+    
+    # 각 샘플의 두 번째로 큰 예측 확률
+    second_max_probabilities = np.partition(y_mean, -2, axis=1)[:, -2]
+    
+    # Margin을 계산
+    margins = max_probabilities - second_max_probabilities
+
+    return margins
+	
 def get_BALD_acquisition(y_T, up_scale = False):
 
 	expected_entropy = - np.mean(np.sum(y_T * np.log(y_T + 1e-10), axis=-1), axis=0) 
@@ -64,7 +89,7 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = True, up_scale= True):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = True, up_scale= True, c_type='BALD'):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
@@ -100,6 +125,21 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
 	not_sample = 0
 
+	if c_type == "entropy":
+		print("엔트로피 기반의 샘플링 전략")
+		entropy_score = - np.sum(y_mean * np.log(y_mean + 1e-10), axis=-1)
+		res_score = 1 - (entropy_score / np.sum(entropy_score))
+		
+	elif c_type == "var":
+		print("예측 분산 기반의 샘플링 전략")
+		y_var_mean = np.mean(y_var, axis=1)
+		res_score = 1 - ((y_var_mean) / np.sum(y_var_mean))
+		
+	elif c_type == "marginal":
+		print("Marginal 기반의 샘플링 전략")
+		margins = margin_sampling(y_mean)
+		res_score = margins / np.sum(margins)
+		
 	if active_learning:
 		for label in range(num_classes):
 			
