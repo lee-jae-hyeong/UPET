@@ -341,7 +341,10 @@ class SemiSupervisedArguments:
         default=1.2,
         metadata={
         "help" : "phce_ce for t parameter"})
-
+    
+    c_type: str = field(
+        default="BALD",
+        metadata={"help": "selection BALD, RES, CONF, entropy, marginal, var."})
 
 @dataclass
 class QuestionAnwseringArguments:
