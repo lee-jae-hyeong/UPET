@@ -606,9 +606,9 @@ class SelfTrainer(object):
         self.predict_data(teacher_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics"))
 
         # 多轮Teacher-Student迭代训练
-
+        
         plus_pseudo_sample_num = self.pseudo_sample_num_or_ratio
-        for iter in range(self.self_training_epoch):
+        for iter in range(1, self.self_training_epoch+1):
             if self.active_learning : 
         
                 logger.info("*"*34)
@@ -686,6 +686,8 @@ class SelfTrainer(object):
                     up_scale = self.up_scale,
                     c_type = self.c_type)
 
+                
+                self.pseudo_sample_num_or_ratio += plus_pseudo_sample_num
                 # Active_learning을 통해 레이블링된 데이터는 언레이블링 데이터에서 제외 처리.
                 print('제외 전 언레이블 데이터 : ', len(self.unlabeled_dataset))
                 check_number = len(self.unlabeled_dataset)
