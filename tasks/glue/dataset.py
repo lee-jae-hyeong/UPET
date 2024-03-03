@@ -14,6 +14,7 @@ import logging
 from typing import Optional
 import json
 import os
+import pandas as pd
 
 # add by wjn
 def random_sampling(raw_datasets: load_dataset, data_type: str="train", num_examples_per_label: Optional[int]=16, seeds=211):
@@ -277,6 +278,15 @@ class GlueDataset():
                 num_examples_per_label=data_args.num_examples_per_label
             )
             self.all_train_dataset = self.train_dataset
+            # train_df = pd.DataFrame(self.train_dataset)
+
+            # ds = HFDataset.from_file("/content/drive/MyDrive/UPET/e_cate3/train/cache-99da41cdd7356129.arrow")
+
+            # train_examples_idx_list = train_df[~train_df['idx'].isin(ds['indices'])]['idx'].tolist()
+            # un_selected_idx_list = ds['indices']
+  
+            # print("기존라벨 갯수 : ", len(train_examples_idx_list))
+            # print("언라벨 갯수 : ", len(un_selected_idx_list))
             self.train_dataset = self.all_train_dataset.select(train_examples_idx_list)
             print("Randomly sampling {}-shot training examples for each label. Total examples number is {}".format(
                 data_args.num_examples_per_label, 
