@@ -409,6 +409,7 @@ class SelfTrainer(object):
         self.uncert = self.semi_training_args.uncert
         self.up_scale = self.semi_training_args.up_scale
         self.phce_t = self.semi_training_args.phce_t
+        self.c_type = self.semi_training_args.c_type
 
     def get_teacher_trainer(
         self, 
@@ -665,6 +666,7 @@ class SelfTrainer(object):
                 print("*"*42)
                 print("* Sampling reliable pseudo-labeled data. *")
                 print("*"*42)
+                print("샘플 선택 전략 : ", self.c_type)
                 # pseudo_labeled_input, np.array(y_s), np.array(w_s), active_labeled_input, np.array(active_y_s), np.array(active_w_s), active_X_idxs
                 X_batch, y_batch, w_batch, active_X_batch, active_y_batch, active_w_batch, X_idxs = sample_by_bald_class_easiness(
                     tokenizer=self.tokenizer, 
@@ -681,7 +683,8 @@ class SelfTrainer(object):
                     active_learning = self.active_learning,
                     active_number = self.active_number,
                     uncert = self.uncert,
-                    up_scale = self.up_scale)
+                    up_scale = self.up_scale,
+                    c_type = self.c_type)
 
                 # Active_learning을 통해 레이블링된 데이터는 언레이블링 데이터에서 제외 처리.
                 print('제외 전 언레이블 데이터 : ', len(self.unlabeled_dataset))
