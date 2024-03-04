@@ -268,10 +268,10 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 				
 			# self_training sample_selection 2번째 컨디션 : 모수의 갯수가 샘플링하는 갯수의 2배 이상인 경우엔, 모수가 충분하다고 판단 / 상위 N개를 추출
 			else:
-				replace = False
-				indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
-				# sorted_indices = np.argsort(-p_norm)
-				# indices = sorted_indices[:samples_per_class]
+				# replace = False
+				# indices = np.random.choice(len(X_input_ids), samples_per_class, p=p_norm, replace=replace)
+				sorted_indices = np.argsort(-p_norm)
+				indices = sorted_indices[:samples_per_class]
 
 			if not true_label is None:
 				true_label_ = true_label[y==label]
