@@ -602,7 +602,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
-
+        t=None
         loss = None
         if labels is not None:
             if self.config.problem_type is None:
@@ -628,7 +628,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
                     
                 else:
                     t = t[0]
-                    print(t)
+                    #print(t)
                     loss_fct = CustomPhceCrossEntropyLoss(t=t)
                     loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1)) 
                     
