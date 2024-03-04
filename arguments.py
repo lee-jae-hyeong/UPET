@@ -342,7 +342,7 @@ class SemiSupervisedArguments:
         metadata={
         "help" : "phce_ce for t parameter"})
     
-    c_type: str = field(
+    c_type: str = field(
         default="BALD",
         metadata={"help": "selection BALD, RES, CONF, entropy, marginal, var."})
 
