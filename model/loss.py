@@ -363,11 +363,9 @@ class CustomPhceCrossEntropyLoss(nn.Module):
 
     def forward(self, logits, labels):
         # 소프트맥스 함수를 통해 로짓 값을 확률 값으로 변환
-        threshold = 1/self.t
+        threshold = 1 / self.t
         probs = torch.softmax(logits, dim=1)
         probs_tensor = probs[range(len(labels)), labels]
-
-        print('전체 손실 함수', -torch.log(probs_tensor).mean())
 
         al_indices = torch.nonzero(torch.tensor(self.weight)).squeeze(1)
         st_indices = torch.nonzero(torch.tensor(self.weight)== 0).squeeze(1)
