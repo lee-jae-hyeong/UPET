@@ -312,14 +312,28 @@ class ContrastiveLoss(nn.Module):
         return (loss1 + loss2) /2
 
 class CustomPhceCrossEntropyLoss(nn.Module):
-    def __init__(self, t=1):
+    def __init__(self, weight, t= 5/3):
         super(CustomPhceCrossEntropyLoss, self).__init__()
         self.t = t
+        self.weight = weight
 
     def forward(self, logits, labels):
         # 소프트맥스 함수를 통해 로짓 값을 확률 값으로 변환
+        threshold = 1/self.t
         probs = torch.softmax(logits, dim=1)
+
+        active_indices = torch.nonzero(torch.tensor(self.weight)).squeeze(1)
+        inactive_indices = torch.nonzero(torch.tensor(self.weight == 0)).squeeze(1)
         
+        active_loss = nn.CrossEntropyLoss(reduction='mean')(logits[active_indices], labels[active_indices])
+
+
+        filtered_inactive_indices = torch.nonzero(probs[inactive_indices].max(dim=1).values > threshold).squeeze(1)
+        filtered_inactive_loss = nn.CrossEntropyLoss(reduction=None)(logits[inactive_indices][filtered_inactive_indices], 
+                                                                      labels[inactive_indices][filtered_inactive_indices])
+        filtered_inactive_loss = filtered_inactive_loss / len(inactive_indices)
+
+        return active_loss + filtered_inactive_loss
         # # # 크로스 엔트로피 손실 계산
         # loss = nn.CrossEntropyLoss()(logits, labels)
         
