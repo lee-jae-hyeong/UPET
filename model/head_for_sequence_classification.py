@@ -629,7 +629,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
                 else:
                     t = t[0]
                     #print(t)
-                    loss_fct = CustomPhceCrossEntropyLoss(t=t)
+                    loss_fct = CustomPhceCrossEntropyLoss(weight = weight, t=t)
                     loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1)) 
                     
 
