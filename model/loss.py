@@ -311,8 +311,52 @@ class ContrastiveLoss(nn.Module):
         loss2  = self.get_loss(x1.detach(), x0, y)
         return (loss1 + loss2) /2
 
+# class CustomPhceCrossEntropyLoss(nn.Module):
+#     def __init__(self, weight, t= 5/3):
+#         super(CustomPhceCrossEntropyLoss, self).__init__()
+#         self.t = t
+#         self.weight = weight
+
+#     def forward(self, logits, labels):
+#         # 소프트맥스 함수를 통해 로짓 값을 확률 값으로 변환
+#         threshold = 1/self.t
+#         probs = torch.softmax(logits, dim=1)
+
+#         active_indices = torch.nonzero(torch.tensor(self.weight)).squeeze(1)
+#         inactive_indices = torch.nonzero(torch.tensor(self.weight == 0)).squeeze(1)
+        
+#         active_loss = nn.CrossEntropyLoss(reduction='mean')(logits[active_indices], labels[active_indices])
+
+
+#         filtered_inactive_indices = torch.nonzero(probs[inactive_indices].max(dim=1).values > threshold).squeeze(1)
+#         filtered_inactive_loss = nn.CrossEntropyLoss(reduction=None)(logits[inactive_indices][filtered_inactive_indices], 
+#                                                                       labels[inactive_indices][filtered_inactive_indices])
+#         filtered_inactive_loss = filtered_inactive_loss / len(inactive_indices)
+
+#         return active_loss + filtered_inactive_loss
+#         # # # 크로스 엔트로피 손실 계산
+#         # loss = nn.CrossEntropyLoss()(logits, labels)
+        
+#         probs_tensor = probs[range(len(labels)), labels]
+#         # 확률을 조정하는 함수 적용
+#         adjusted_probs = self.phce_loss_adjust(probs_tensor)
+#         adjust_loss = -torch.log(adjusted_probs).mean()
+        
+#         return adjust_loss
+    
+#     def phce_loss_adjust(self, prob):
+
+#         self.threshold = 1/self.t
+#         adjust_loss = torch.where(prob <= self.threshold, self.phce_loss(prob), -torch.log(prob))
+
+#         return adjust_loss
+
+#     def phce_loss(self, prob):
+#         return (-self.t * prob) + torch.log(torch.tensor(self.t).clone().detach()) + 1
+#         #return torch.min((-self.t * prob) + torch.log(torch.tensor(self.t)) + 1, torch.tensor(self.threshold))
+
 class CustomPhceCrossEntropyLoss(nn.Module):
-    def __init__(self, weight, t= 5/3):
+    def __init__(self, weight, t= 1.67):
         super(CustomPhceCrossEntropyLoss, self).__init__()
         self.t = t
         self.weight = weight
@@ -321,39 +365,30 @@ class CustomPhceCrossEntropyLoss(nn.Module):
         # 소프트맥스 함수를 통해 로짓 값을 확률 값으로 변환
         threshold = 1/self.t
         probs = torch.softmax(logits, dim=1)
-
-        active_indices = torch.nonzero(torch.tensor(self.weight)).squeeze(1)
-        inactive_indices = torch.nonzero(torch.tensor(self.weight == 0)).squeeze(1)
-        
-        active_loss = nn.CrossEntropyLoss(reduction='mean')(logits[active_indices], labels[active_indices])
-
-
-        filtered_inactive_indices = torch.nonzero(probs[inactive_indices].max(dim=1).values > threshold).squeeze(1)
-        filtered_inactive_loss = nn.CrossEntropyLoss(reduction=None)(logits[inactive_indices][filtered_inactive_indices], 
-                                                                      labels[inactive_indices][filtered_inactive_indices])
-        filtered_inactive_loss = filtered_inactive_loss / len(inactive_indices)
-
-        return active_loss + filtered_inactive_loss
-        # # # 크로스 엔트로피 손실 계산
-        # loss = nn.CrossEntropyLoss()(logits, labels)
-        
         probs_tensor = probs[range(len(labels)), labels]
-        # 확률을 조정하는 함수 적용
-        adjusted_probs = self.phce_loss_adjust(probs_tensor)
-        adjust_loss = -torch.log(adjusted_probs).mean()
+
+        print('전체 손실 함수', -torch.log(probs_tensor).mean())
+
+        al_indices = torch.nonzero(torch.tensor(self.weight)).squeeze(1)
+        st_indices = torch.nonzero(torch.tensor(self.weight)== 0).squeeze(1)
+
+        al_probs = probs_tensor[al_indices]
+        st_probs = probs_tensor[st_indices]
+
+        if len(al_probs) != 0:
+            active_loss = -torch.log(al_probs).mean()
+
+        else:
+            active_loss = 0
         
-        return adjust_loss
-    
-    def phce_loss_adjust(self, prob):
+        if len(st_probs) != 0:
+            st_loss = torch.where(st_probs <= threshold, 0, -torch.log(st_probs)).mean()
+        else:
+            st_loss = 0
 
-        self.threshold = 1/self.t
-        adjust_loss = torch.where(prob <= self.threshold, self.phce_loss(prob), -torch.log(prob))
+        return active_loss + st_loss
+        
 
-        return adjust_loss
-
-    def phce_loss(self, prob):
-        return (-self.t * prob) + torch.log(torch.tensor(self.t).clone().detach()) + 1
-        #return torch.min((-self.t * prob) + torch.log(torch.tensor(self.t)) + 1, torch.tensor(self.threshold))
 
 
 class LossCriterion(IntEnum):
