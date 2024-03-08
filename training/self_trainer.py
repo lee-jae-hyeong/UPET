@@ -735,7 +735,7 @@ class SelfTrainer(object):
     
                     pseudo_labeled_dataset = pseudo_labeled_dataset.add_item(tmp_dataset)
                 
-    
+                pseudo_labeled_dataset = pseudo_labeled_dataset.shuffle()
                 # 初始化一个新的Student模型，并让Student模型在pseudo-labeled data上进行鲁棒学习
                 logger.info("*"*56)
                 logger.info("* Training a new student model on active-labeled data. *")
