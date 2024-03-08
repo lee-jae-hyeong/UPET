@@ -602,7 +602,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
-        t=None
+        # t=None
         loss = None
         if labels is not None:
             if self.config.problem_type is None:
