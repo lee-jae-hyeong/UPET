@@ -153,7 +153,6 @@ class TeacherTrainer(BaseTrainer):
         self.global_step_ = 0
         self.dataset_name=dataset_name
         
-    
 
     def mc_evaluate(
         self,
@@ -165,22 +164,22 @@ class TeacherTrainer(BaseTrainer):
         metric_key_prefix: str = "eval",
         T: int = 30,
         num_classes: int = 0,
-        k_sample : float = 0.0
-    ):
-        """
-        Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
+        k_sample : float = 0.0,
+        use_mc_dropout: bool = False  # Add this option
+        ):
+    """
+    Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
 
-        Works both with or without labels.
-        """
+    Works both with or without labels.
+    """
         args = self.args
-
+    
         prediction_loss_only = prediction_loss_only if prediction_loss_only is not None else args.prediction_loss_only
-        is_sample = True
         if unlabeled_data_num == -1 or unlabeled_data_num >= len(unlabeled_dataset):
             unlabeled_data_num = len(unlabeled_dataset)
             is_sample = False
             print('샘플링 하지 않음')
-
+    
         else:
             recalled_examples_idx_list = random_sampling(
             raw_datasets=unlabeled_dataset, 
@@ -189,71 +188,39 @@ class TeacherTrainer(BaseTrainer):
             unlabeled_dataset = unlabeled_dataset.select(recalled_examples_idx_list)
             unlabeled_data_num = len(unlabeled_dataset)
             print('샘플링 한다.')
-
-        # else:
-        #     logger.info ("Evaluating uncertainty on {} number of instances sampled from {} unlabeled instances".format(unlabeled_data_num, unlabeled_dataset)) 
-        #     indices = np.random.choice(len(unlabeled_dataset), unlabeled_data_num, replace=False)
-        #     unlabeled_dataset = unlabeled_dataset.select(indices)
-        #     unlabeled_data_num = len(unlabeled_dataset)           
-
-        # else:
-        #     if self.dataset_name in ["ecommerce", "ecommerce_cate", "ecommerce_cate_top"]:
-        #         is_sample=False
-        #         logger.info(f"***** mc_evaulate_dataset_name : {self.dataset_name} & is_sample : {is_sample} *****")
-        
-        # if is_sample:
-        #     recalled_examples_idx_list = random_sampling(
-        #         raw_datasets=unlabeled_dataset, 
-        #         num_examples_per_label=unlabeled_data_num // num_classes
-        #     )
-        #     unlabeled_dataset = unlabeled_dataset.select(recalled_examples_idx_list)
-        #     unlabeled_data_num = len(unlabeled_dataset)
-
+    
         unlabeled_dataloader = self.get_eval_dataloader(unlabeled_dataset)
-        model = self._wrap_model(self.model, training=True, dataloader=unlabeled_dataloader) # reset training to True
-
+        model = self._wrap_model(self.model, training=use_mc_dropout, dataloader=unlabeled_dataloader)
+    
         batch_size = unlabeled_dataloader.batch_size
-        # unlabeled_data_num = self.num_examples(unlabeled_dataloader)
         logger.info(f"***** Running {description} *****")
         logger.info(f"  Num examples = {unlabeled_data_num}")
         logger.info(f"  Batch size = {batch_size}")
-
-        # world_size = max(1, args.world_size)
-        
-        # if not prediction_loss_only:
-        #     # The actual number of eval_sample can be greater than num_examples in distributed settings (when we pass
-        #     # a batch size to the sampler)
-        #     make_multiple_of = None
-        #     if hasattr(unlabeled_dataloader, "sampler") and isinstance(unlabeled_dataloader.sampler, SequentialDistributedSampler):
-        #         make_multiple_of = unlabeled_dataloader.sampler.batch_size
-
-        model.train() # 开启train模式，允许模型进行Dropout
-
+    
+        model.train() if use_mc_dropout else model.eval()
+    
         if args.past_index >= 0:
             self._past = None
-
+    
         self.callback_handler.eval_dataloader = unlabeled_dataloader
-
-        # y_T = np.zeros((T, unlabeled_data_num, num_classes))
+    
         y_T = list()
         label = []
         for i in tqdm(range(T)):
             y_pred = []
-
+    
             for step, inputs in enumerate(unlabeled_dataloader):
                 if i == 1:
                     label.extend(inputs['labels'])
                 _, logits, __ = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys)
                 y_pred.extend(logits.detach().cpu().numpy().tolist())
-            # print("y_pred.shape=", torch.Tensor(y_pred).shape) # [n, num_class]
+            
             predict_proba = torch.softmax(torch.Tensor(y_pred).to(logits.device), -1)
             k_sample_num = -1 * round(num_classes * k_sample)
-
+    
             if k_sample != 0.0:
-                print('변경전 0 : ', predict_proba[0])
-                print('변경전 1 : ', predict_proba[1])
                 predict_proba = predict_proba.detach().cpu().numpy().tolist()
-
+    
                 if abs(k_sample_num) < 2:
                     y_T.append(predict_proba.detach().cpu().numpy().tolist())
                     
@@ -262,57 +229,42 @@ class TeacherTrainer(BaseTrainer):
                     
                     for j in range(len(top_indices)):
                         predict_proba[j] = np.where(np.isin(np.arange(num_classes), top_indices[j]), 0, predict_proba[j])
-
+    
                         row_sum = np.sum(predict_proba[j])
-                        if j < 2:
-                            print('변경 중간 0 : ', predict_proba[j])
-                            print('row_sum : ', row_sum)
                         predict_proba[j] = predict_proba[j] / row_sum
-                    print('변경후 0 : ', predict_proba[0])
-                    print('변경후 1 : ', predict_proba[1])
-                    print("길이 : ", len(predict_proba))
+    
                     y_T.append(predict_proba)
                         
             
             else:
-            # print("predict_proba.shape=", predict_proba.shape) # [n, num_class]
-            # y_T[i] = predict_proba.detach().cpu().numpy().tolist()
                 y_T.append(predict_proba.detach().cpu().numpy().tolist())
         
         y_T = np.array(y_T)
             
-        #compute mean
         y_mean = np.mean(y_T, axis=0)
-        # print("y_mean.shape=", y_mean.shape) # e.g., (4095, 3) [n, class_num]
-        # print("(unlabeled_data_num, num_classes)=", (unlabeled_data_num, num_classes))
         assert y_mean.shape == (unlabeled_data_num, num_classes)
-
-        #compute majority prediction
+    
         y_pred = np.array([np.argmax(np.bincount(row)) for row in np.transpose(np.argmax(y_T, axis=-1))])
         assert y_pred.shape == (unlabeled_data_num,)
-
+    
         print(y_pred)
         label = [tensor.item() for tensor in label]
         matching_indices = [index for index, (item1, item2) in enumerate(zip(y_pred, label)) if item1 == item2]
         print(label)
         print('정확도 : ', accuracy_score(label, y_pred))
-        #compute variance
+    
         y_var = np.var(y_T, axis=0)
         selected_values = [y_var[i] for i in matching_indices]
         print('일치 분산 : ', np.mean(selected_values))
-
+    
         unmatching_indices = [index for index, (item1, item2) in enumerate(zip(y_pred, label)) if item1 != item2]
         unselected_values = [y_var[i] for i in unmatching_indices]
         print('불일치 분산 : ', np.mean(unselected_values))        
         
         assert y_var.shape == (unlabeled_data_num, num_classes)
-
+    
         return unlabeled_dataset, y_mean, y_var, y_pred, y_T, np.array(label)
-        # #compute variance
-        # y_var = np.var(y_T, axis=0)
-        # assert y_var.shape == (unlabeled_data_num, num_classes)
 
-        # return unlabeled_dataset, y_mean, y_var, y_pred, y_T
 
 
 
