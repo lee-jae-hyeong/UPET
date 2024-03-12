@@ -267,7 +267,7 @@ class GlueDataset():
                 self.predict_dataset = self.predict_dataset.select(range(data_args.max_predict_samples))
 
         eval_dataset = pd.DataFrame(self.eval_dataset)
-        eval_dataset, test_dataset = train_test_split(eval_dataset, test_size = 0.2, random_state= 411, stratify = test['label'])
+        eval_dataset, test_dataset = train_test_split(eval_dataset, test_size = 0.2, random_state= 411, stratify = eval_dataset['label'])
 
         self.test_dataset = self.eval_dataset.select(test_dataset['idx'].tolist())
         self.eval_dataset = self.eval_dataset.select(eval_dataset['idx'].tolist())
