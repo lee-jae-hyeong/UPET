@@ -100,6 +100,7 @@ def get_trainer(args):
             train_dataset=dataset.train_dataset if training_args.do_train else None,
             unlabeled_dataset=dataset.unlabeled_dataset,
             eval_dataset=dataset.eval_dataset,
+            test_dataset=dataset.test_dataset,
             compute_metrics=dataset.compute_metrics,
             tokenizer=tokenizer,
             teacher_data_collator=dataset.data_collator,
