@@ -360,6 +360,7 @@ class SelfTrainer(object):
         train_dataset: Optional[Dataset]=None,
         unlabeled_dataset: Optional[Dataset]=None,
         eval_dataset=None,
+        test_dataset = None,
         compute_metrics=None,
         tokenizer=None,
         teacher_data_collator=None,
@@ -379,6 +380,7 @@ class SelfTrainer(object):
         self.train_dataset = train_dataset.shuffle()
         self.unlabeled_dataset = unlabeled_dataset.shuffle()
         self.eval_dataset = eval_dataset.shuffle()
+        self.test_dataset = test_dataset.shuffle()
         self.compute_metrics = compute_metrics
         self.tokenizer = tokenizer
         self.teacher_data_collator = teacher_data_collator
@@ -500,6 +502,7 @@ class SelfTrainer(object):
             f.write(f"precision_weighted: {precision_weighted}\n")
     
             accuracy = accuracy_score(predict_dataset['label'], predicted_labels)
+            print('accuracy_score : {}'.format(accuracy))
             f.write(f"accuracy_score: {accuracy}\n")
 
     
@@ -603,7 +606,7 @@ class SelfTrainer(object):
         best_self_training_iteration = None
         best_teacher_model = None
 
-        self.predict_data(teacher_trainer, self.eval_dataset, os.path.join(self.output_dir, "total_metrics"))
+        self.predict_data(teacher_trainer, self.test_dataset, os.path.join(self.output_dir, "few_shot_metrics"))
 
         # 多轮Teacher-Student迭代训练
         
@@ -766,7 +769,9 @@ class SelfTrainer(object):
                 student_trainer.train()
                 load_model(student_model, os.path.join(student_trainer.state.best_model_checkpoint, "model.safetensors"))
                 #student_model.load_state_dict(torch.load(os.path.join(student_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
-    
+                
+                self.predict_data(teacher_trainer, self.test_dataset, os.path.join(self.output_dir, "few_shot_metrics"))
+                
                 # 将Student模型参数赋给Teacher，作为下一轮训练的Teacher初始化
                 logger.info("*"*64)
                 logger.info("* Initializing a new teacher model from trained student model. *")
@@ -781,6 +786,8 @@ class SelfTrainer(object):
                     num_train_epochs=self.teacher_tuning_epoch, 
                     output_dir=os.path.join(self.output_dir, "iteration", "active_teacher_iter_{}".format(iter))
                 )
+                
+                self.predict_data(teacher_trainer, self.test_dataset, os.path.join(self.output_dir, "iteration", "active_teacher_iter_{}_metrics".format(iter)))
     
     
                 
