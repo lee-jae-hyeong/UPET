@@ -269,11 +269,12 @@ class GlueDataset():
         eval_dataset = pd.DataFrame(self.eval_dataset)
         eval_dataset, test_dataset = train_test_split(eval_dataset, test_size = 0.2, random_state= 411, stratify = eval_dataset['label'])
 
-        self.test_dataset = self.eval_dataset.select(test_dataset['idx'].tolist())
-        self.eval_dataset = self.eval_dataset.select(eval_dataset['idx'].tolist())
-
-        print('검증 데이터 셋 크기 : ', len(self.eval_dataset), len(self.eval_dataset) == 160*72)
-        print('테스트 데이터 셋 크기 : ', len(self.test_dataset), len(self.test_dataset) == 40*72)
+        # self.eval_dataset = self.eval_dataset.select(test_dataset['idx'].tolist())
+        self.test_dataset = self.eval_dataset.select(eval_dataset['idx'].tolist())
+        self.eval_dataset = self.eval_dataset.select(test_dataset['idx'].tolist())
+        
+        print('검증 데이터 셋 크기 : ', len(self.eval_dataset), len(self.eval_dataset) == 40*72)
+        print('테스트 데이터 셋 크기 : ', len(self.test_dataset), len(self.test_dataset) == 160*72)
         
          # add by wjn 
         self.unlabeled_dataset = None
