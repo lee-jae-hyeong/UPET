@@ -210,7 +210,7 @@ class TeacherTrainer(BaseTrainer):
             y_pred = []
     
             for step, inputs in enumerate(unlabeled_dataloader):
-                if i == 1:
+                if i == 0:
                     label.extend(inputs['labels'])
                 _, logits, __ = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys)
                 y_pred.extend(logits.detach().cpu().numpy().tolist())
