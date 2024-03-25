@@ -89,7 +89,7 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = True, up_scale= True, c_type='BALD'):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = True, up_scale= True, c_type='BALD', class_indepent = True):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
@@ -141,72 +141,108 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		res_score = margins / np.sum(margins)
 		
 	if active_learning:
-		for label in range(num_classes):
+		if class_indepent:
+			sorted_indices = np.argsort(p_norm)
+			indices = sorted_indices[:active_number]
+			y[indices] = true_label[indices]
 			
-			p_norm = res_score[y==label]
-			p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
-			p_norm = p_norm/np.sum(p_norm)
-			
-			X_input_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['attention_mask'])[y == label]
-			X_idx = np.array(X['idx'])[y == label]
-			
+			X_input_ids, X_attention_mask = np.array(X['input_ids']), np.array(X['attention_mask'])
+			X_idx = np.array(X['idx'])
 			if "token_type_ids" in X.features:
-				X_token_type_ids = np.array(X['token_type_ids'])[y == label]
+				X_token_type_ids = np.array(X['token_type_ids'])
 			if "mask_pos" in X.features:
-				X_mask_pos = np.array(X['mask_pos'])[y == label]
-				
-			y_ = y[y==label]
-			y_var_ = y_var[y == label]
-			true_label_ = true_label[y==label]
+				X_mask_pos = np.array(X['mask_pos'])
 			
-			print('ACTIVE_LEARNING_START')
-			if uncert:
-				print('ACTIVE_LEARNING_UNCERTAINTY')
-				sorted_indices = np.argsort(p_norm)
-				indices = sorted_indices[:active_number]
-			else:
-				print('ACTIVE_LEARNING_RANDOM_SAMPLE')
-				indices = np.random.choice(len(p_norm), active_number, replace=False)
-				
-			print(len(indices))
-			# print(X)
-			# print(X['idx'])
-			y_[indices] = true_label_[indices]
-			# active_X_idxs.extend(np.array(X['idx'])[indices])
 			active_X_s_input_ids.extend(X_input_ids[indices])
 			active_X_s_attention_mask.extend(np.array(X_attention_mask)[indices])
 			active_X_idxs.extend(X_idx[indices])
-			
-		
 			if "token_type_ids" in X.features:
 				active_X_s_token_type_ids.extend(X_token_type_ids[indices])
 			if "mask_pos" in X.features:
 				active_X_s_mask_pos.extend(X_mask_pos[indices])
-				
-			active_y_s.extend(y_[indices])
-			#tmp_y_var = np.zero(len(active_number))
-			#active_w_s.extend(tmp_y_var)
-			
-			#indices_to_keep = np.logical_not(np.isin(np.arange(len(res_score)), indices))
-	
-			check_number = len(y_)
+					
+			active_y_s.extend(y[indices])
+			check_number = len(y)
 			print('ACTIVE_SAMPLING 데이터 숫자 : ', check_number)
-			#X = X[indices_to_keep]
-			#y_var = y_var[indices_to_keep]
-			#y = y[indices_to_keep]
 			
-			#print('ACTIVE_SAMPLING 이후의 데이터 숫자 : ', len(X['idx']), len(y_var), len(y))
-			#print('숫자 일치 유무 : ', check_number - active_number == len(y))
+			active_labeled_input = {'input_ids': np.array(active_X_s_input_ids), 
+						'attention_mask': np.array(active_X_s_attention_mask)}
 			
-		active_labeled_input = {
-			'input_ids': np.array(active_X_s_input_ids), 
-			'attention_mask': np.array(active_X_s_attention_mask)
-		}
-		if "token_type_ids" in X.features:
-			active_labeled_input['token_type_ids'] = np.array(active_X_s_token_type_ids)
-		if "mask_pos" in X.features:
-			active_labeled_input['mask_pos'] = np.array(active_X_s_mask_pos)
+			if "token_type_ids" in X.features:
+				active_labeled_input['token_type_ids'] = np.array(active_X_s_token_type_ids)
+			if "mask_pos" in X.features:
+				active_labeled_input['mask_pos'] = np.array(active_X_s_mask_pos)
+
+			return [], [], [], active_labeled_input, np.array(active_y_s), np.array(active_w_s), active_X_idxs
+
+		else:
 				
+			for label in range(num_classes):
+				
+				p_norm = res_score[y==label]
+				p_norm = np.maximum(np.zeros(len(p_norm)), p_norm)
+				p_norm = p_norm/np.sum(p_norm)
+				
+				X_input_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['attention_mask'])[y == label]
+				X_idx = np.array(X['idx'])[y == label]
+				
+				if "token_type_ids" in X.features:
+					X_token_type_ids = np.array(X['token_type_ids'])[y == label]
+				if "mask_pos" in X.features:
+					X_mask_pos = np.array(X['mask_pos'])[y == label]
+					
+				y_ = y[y==label]
+				y_var_ = y_var[y == label]
+				true_label_ = true_label[y==label]
+				
+				print('ACTIVE_LEARNING_START')
+				if uncert:
+					print('ACTIVE_LEARNING_UNCERTAINTY')
+					sorted_indices = np.argsort(p_norm)
+					indices = sorted_indices[:active_number]
+				else:
+					print('ACTIVE_LEARNING_RANDOM_SAMPLE')
+					indices = np.random.choice(len(p_norm), active_number, replace=False)
+					
+				print(len(indices))
+				# print(X)
+				# print(X['idx'])
+				y_[indices] = true_label_[indices]
+				# active_X_idxs.extend(np.array(X['idx'])[indices])
+				active_X_s_input_ids.extend(X_input_ids[indices])
+				active_X_s_attention_mask.extend(np.array(X_attention_mask)[indices])
+				active_X_idxs.extend(X_idx[indices])
+				
+			
+				if "token_type_ids" in X.features:
+					active_X_s_token_type_ids.extend(X_token_type_ids[indices])
+				if "mask_pos" in X.features:
+					active_X_s_mask_pos.extend(X_mask_pos[indices])
+					
+				active_y_s.extend(y_[indices])
+				#tmp_y_var = np.zero(len(active_number))
+				#active_w_s.extend(tmp_y_var)
+				
+				#indices_to_keep = np.logical_not(np.isin(np.arange(len(res_score)), indices))
+		
+				check_number = len(y_)
+				print('ACTIVE_SAMPLING 데이터 숫자 : ', check_number)
+				#X = X[indices_to_keep]
+				#y_var = y_var[indices_to_keep]
+				#y = y[indices_to_keep]
+				
+				#print('ACTIVE_SAMPLING 이후의 데이터 숫자 : ', len(X['idx']), len(y_var), len(y))
+				#print('숫자 일치 유무 : ', check_number - active_number == len(y))
+				
+			active_labeled_input = {
+				'input_ids': np.array(active_X_s_input_ids), 
+				'attention_mask': np.array(active_X_s_attention_mask)
+			}
+			if "token_type_ids" in X.features:
+				active_labeled_input['token_type_ids'] = np.array(active_X_s_token_type_ids)
+			if "mask_pos" in X.features:
+				active_labeled_input['mask_pos'] = np.array(active_X_s_mask_pos)
+					
 		
 	for label in range(num_classes):
 		# X_input_ids, X_token_type_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['token_type_ids'])[y == label], np.array(X['attention_mask'])[y == label]
