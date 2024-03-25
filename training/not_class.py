@@ -142,6 +142,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 		
 	if active_learning:
 		if class_indepent:
+			print('클래스 독립 선택')
 			sorted_indices = np.argsort(p_norm)
 			indices = sorted_indices[:active_number]
 			y[indices] = true_label[indices]
