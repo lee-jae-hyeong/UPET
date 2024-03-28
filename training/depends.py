@@ -89,7 +89,7 @@ def sample_by_bald_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_cla
 	return X_s, y_s, w_s
 
 
-def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = True, up_scale= True, c_type='BALD', class_indepent = True):
+def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T, alpha, cb_loss=True, true_label = None, active_learning= False, active_number = 16, uncert = True, up_scale= True, c_type='BALD', class_indepent = True, itera = 0):
 
 	assert (alpha >= 0) & (alpha <= 1), "alpha should be between 0 and 1"
 
@@ -178,7 +178,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
                 
 
 			reverse_sorted_indices = np.argsort(-res_score)
-			reverse_indices = reverse_sorted_indices[:active_number]
+			reverse_indices = reverse_sorted_indices[:active_number*itera]
 			
 			y_s.extend(y[reverse_indices])
 			print('수도레이블 샘플링 수 : ', len(y_s))
