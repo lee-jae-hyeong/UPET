@@ -698,7 +698,7 @@ class SelfTrainer(object):
                 print('제외 후 언레이블 데이터 : ', len(self.unlabeled_dataset))
                 print('차이 체크 : ', check_number - len(self.unlabeled_dataset), '정상 유무 : ', check_number - len(self.unlabeled_dataset) == self.active_number * self.num_classes)
                 
-                print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch)))
+                # print("{} : 클래스별 샘플링 갯수 모음".format(np.bincount(y_batch)))
     
                 active_labeled_examples = active_X_batch
                 active_labeled_examples["label"] = active_y_batch  
@@ -713,7 +713,7 @@ class SelfTrainer(object):
                 if self.semi_training_args.confidence:
                     logger.info("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
                     print("* Confidence Learning Operation and conf_alpha : {} *".format(self.semi_training_args.conf_alpha))
-                    X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
+                    # X_conf = -np.log(w_batch+1e-10)*self.semi_training_args.conf_alpha
                     pseudo_labeled_examples = X_batch
                     pseudo_labeled_examples["label"] = y_batch
                     pseudo_labeled_examples["t"] = np.ones(len(y_batch)) * self.phce_t
