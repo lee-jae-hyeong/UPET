@@ -177,22 +177,22 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 				active_labeled_input['mask_pos'] = np.array(active_X_s_mask_pos)
                 
 
-            reverse_sorted_indices = np.argsort(-res_score)
+			reverse_sorted_indices = np.argsort(-res_score)
 			reverse_indices = reverse_sorted_indices[:active_number]
-
-            y_s.extend(y[reverse_indices])
-            print('수도레이블 샘플링 수 : ', len(y_s))
-            X_s_input_ids.extend(X_input_ids[reverse_indices])
-			active_X_s_attention_mask.extend(np.array(X_attention_mask)[reverse_indices])
-
+			
+			y_s.extend(y[reverse_indices])
+			print('수도레이블 샘플링 수 : ', len(y_s))
+			
+			X_s_input_ids.extend(X_input_ids[reverse_indices])
+			X_s_attention_mask.extend(np.array(X_attention_mask)[reverse_indices])
 			if "token_type_ids" in X.features:
 				X_s_token_type_ids.extend(X_token_type_ids[reverse_indices])
 			if "mask_pos" in X.features:
 				X_s_mask_pos.extend(X_mask_pos[reverse_indices])
-
-            pseudo_labeled_input = {'input_ids': np.array(active_X_s_input_ids),
-                                'attention_mask': np.array(active_X_s_attention_mask)}
-                
+				
+			pseudo_labeled_input = {'input_ids': np.array(X_s_input_ids),
+						'attention_mask': np.array(X_s_attention_mask)}
+			
 			return pseudo_labeled_input, np.array(y_s), [], active_labeled_input, np.array(active_y_s), np.array(active_w_s), active_X_idxs
 
 		else:
