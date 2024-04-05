@@ -165,7 +165,8 @@ class TeacherTrainer(BaseTrainer):
         T: int = 30,
         num_classes: int = 0,
         k_sample : float = 0.0,
-        use_mc_dropout: bool = False  # Add this option
+        use_mc_dropout: bool = False,  # Add this option
+        feature_extract = False
         ):
     """
     Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
@@ -206,6 +207,8 @@ class TeacherTrainer(BaseTrainer):
     
         y_T = list()
         label = []
+        embeddings = []
+
         for i in tqdm(range(T)):
             y_pred = []
     
@@ -213,7 +216,9 @@ class TeacherTrainer(BaseTrainer):
                 if i == 0:
                     label.extend(inputs['labels'])
                 _, logits, __ = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys)
-                y_pred.extend(logits.detach().cpu().numpy().tolist())
+                y_pred.extend(logits.detach().cpu().numpy().tolist())'
+                embeddings.extend(logits.detach().cpu().numpy().tolist())
+                
             
             predict_proba = torch.softmax(torch.Tensor(y_pred).to(logits.device), -1)
             k_sample_num = -1 * round(num_classes * k_sample)
@@ -263,7 +268,7 @@ class TeacherTrainer(BaseTrainer):
         
         assert y_var.shape == (unlabeled_data_num, num_classes)
     
-        return unlabeled_dataset, y_mean, y_var, y_pred, y_T, np.array(label)
+        return unlabeled_dataset, y_mean, y_var, y_pred, y_T, np.array(label), np.array(embeddings)
 
 
 
