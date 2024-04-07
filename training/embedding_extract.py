@@ -113,6 +113,7 @@ def random_sampling(raw_datasets, num_examples_per_label: Optional[int]=16, leas
 
     remain_examples_num= (num_examples_per_label-least_num)*len(label_dict.keys())
     print('모자란 갯수 : ', remain_examples_num)
+    np.random.seed(42)
     idxs = np.random.choice(len(raw_datasets), size=remain_examples_num, replace=False)
     few_example_ids.extend(idxs)
     
@@ -168,11 +169,7 @@ class TeacherTrainer(BaseTrainer):
         use_mc_dropout: bool = False,  # Add this option
         feature_extract = False
         ):
-    """
-    Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
 
-    Works both with or without labels.
-    """
         args = self.args
     
         prediction_loss_only = prediction_loss_only if prediction_loss_only is not None else args.prediction_loss_only
