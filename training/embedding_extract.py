@@ -313,6 +313,7 @@ class SelfTrainer(object):
         semi_training_args,
         train_dataset: Optional[Dataset]=None,
         unlabeled_dataset: Optional[Dataset]=None,
+        test_dataset = None,
         eval_dataset=None,
         compute_metrics=None,
         tokenizer=None,
@@ -332,6 +333,7 @@ class SelfTrainer(object):
         self.semi_training_args = semi_training_args
         self.train_dataset = train_dataset.shuffle()
         self.unlabeled_dataset = unlabeled_dataset.shuffle()
+        self.test_dataset = test_dataset.shuffle()
         self.eval_dataset = eval_dataset.shuffle()
         self.compute_metrics = compute_metrics
         self.tokenizer = tokenizer
@@ -613,7 +615,7 @@ class SelfTrainer(object):
                     T=1, 
                     num_classes=self.num_classes
                     )
-                idx_list = np.array(unlabeled_dataset['idx'].tolist())
+                idx_list = np.array(unlabeled_dataset['idx'])
                 file_path = "total_idx.npy"
                 np.save(file_path, idx_list)
 
