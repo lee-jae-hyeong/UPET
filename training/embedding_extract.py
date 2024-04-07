@@ -529,7 +529,7 @@ class SelfTrainer(object):
             print("* Training teacher model over labeled data before self-training. *")
             print("*"*66)
 
-            teacher_trainer.train()
+            #teacher_trainer.train()
             #2024.01.18 코드 수정
             load_model(teacher_model, os.path.join(teacher_trainer.state.best_model_checkpoint, "model.safetensors"))
             #teacher_model.load_state_dict(torch.load(os.path.join(teacher_trainer.state.best_model_checkpoint, "pytorch_model.bin")))
@@ -607,12 +607,21 @@ class SelfTrainer(object):
                 print("Active_learning for Obtaining pseudo-labeled data and uncertainty estimation via MC dropout.")
                 print("*"*72)
     
-                unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label = teacher_trainer.mc_evaluate(
+                unlabeled_dataset, y_mean, y_var, y_pred, y_T, true_label, embeddings = teacher_trainer.mc_evaluate(
                     unlabeled_dataset=self.unlabeled_dataset, 
                     unlabeled_data_num=self.unlabeled_data_num,
-                    T=15, 
+                    T=1, 
                     num_classes=self.num_classes
                     )
+                idx_list = np.array(unlabeled_dataset['idx'].tolist())
+                file_path = "total_idx.npy"
+                np.save(file_path, idx_list)
+
+                file_path = "embeddings.npy"
+                np.save(file_path, embeddings)
+
+                file_path = "true_label.npy"
+                np.save(file_path, true_label)
                 
                 logger.info("*"*42)
                 logger.info("* Sampling reliable pseudo-labeled data. *")
@@ -622,7 +631,7 @@ class SelfTrainer(object):
                 print("*"*42)
                 print("샘플 선택 전략 : ", self.c_type)
                 # pseudo_labeled_input, np.array(y_s), np.array(w_s), active_labeled_input, np.array(active_y_s), np.array(active_w_s), active_X_idxs
-                X_batch, y_batch, w_batch, active_X_batch, active_y_batch, active_w_batch, X_idxs = sample_by_bald_class_easiness(
+                X_batch, y_batch, w_batch, X_idxs, active_X_batch, active_y_batch, active_w_batch, active_X_idxs = sample_by_bald_class_easiness(
                     tokenizer=self.tokenizer, 
                     X=unlabeled_dataset, 
                     y_mean=y_mean, 
@@ -639,7 +648,14 @@ class SelfTrainer(object):
                     uncert = self.uncert,
                     up_scale = self.up_scale,
                     c_type = self.c_type)
+                
+                file_path = "st_X_idx.npy"
+                np.save(file_path, X_idxs)
 
+                file_path = "active_X_idxs.npy"
+                np.save(file_path, active_X_idxs)
+
+                break
                 
                 self.pseudo_sample_num_or_ratio += plus_pseudo_sample_num
                 # Active_learning을 통해 레이블링된 데이터는 언레이블링 데이터에서 제외 처리.
