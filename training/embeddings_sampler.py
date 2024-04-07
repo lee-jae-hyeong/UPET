@@ -122,7 +122,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 
 	active_X_s_input_ids, active_X_s_token_type_ids, active_X_s_attention_mask, active_X_s_mask_pos, active_y_s, active_w_s, active_X_idxs = [], [], [], [], [], [], []
 	
-	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s = [], [], [], [], [], []
+	X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, X_s_mask_pos, y_s, w_s, X_idxs = [], [], [], [], [], [], []
 	not_sample = 0
 
 	if c_type == "entropy":
@@ -211,7 +211,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	for label in range(num_classes):
 		# X_input_ids, X_token_type_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['token_type_ids'])[y == label], np.array(X['attention_mask'])[y == label]
 		X_input_ids, X_attention_mask = np.array(X['input_ids'])[y == label], np.array(X['attention_mask'])[y == label]
-		#X_idx = np.array(X['idx'])[y == label]
+		X_idx = np.array(X['idx'])[y == label]
 		if "token_type_ids" in X.features:
 			X_token_type_ids = np.array(X['token_type_ids'])[y == label]
 		if "mask_pos" in X.features:
@@ -347,7 +347,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 			X_s_mask_pos.extend(X_mask_pos[indices])
 		y_s.extend(y_[indices])
 		w_s.extend(y_var_[indices][:,label])
-		#X_idxs.extend(np.ones(len(indices))* -1)
+		X_idxs.extend(X_idx[indices])
 
 	print("{}_SAMPLING_FAIL_COUNT".format(not_sample))
 	# X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s = shuffle(X_s_input_ids, X_s_token_type_ids, X_s_attention_mask, y_s, w_s)
@@ -371,7 +371,7 @@ def sample_by_bald_class_easiness(tokenizer, X, y_mean, y_var, y, num_samples, n
 	if "mask_pos" in X.features:
 		pseudo_labeled_input['mask_pos'] = np.array(X_s_mask_pos)
 		
-	return pseudo_labeled_input, np.array(y_s), np.array(w_s), active_labeled_input, np.array(active_y_s), np.array(active_w_s), active_X_idxs
+	return pseudo_labeled_input, np.array(y_s), np.array(w_s), np.array(X_idxs), active_labeled_input, np.array(active_y_s), np.array(active_w_s), np.array(active_X_idxs)
 
 
 def sample_by_bald_class_difficulty(tokenizer, X, y_mean, y_var, y, num_samples, num_classes, y_T):
